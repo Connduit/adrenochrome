@@ -22,7 +22,6 @@ Reflective Loader for DLLs, Stripped DLLs, and Position Independent Code
   - setup globals
   - initalize hap or scratch buffers
   - start a new worker thread
-  - 
 - host.dll::HostEntryPoint() (the real host.dll main function)
   - inialize cyryptography
   - - intialize ipc/state
