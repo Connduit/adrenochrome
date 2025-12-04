@@ -9,3 +9,10 @@
 7. run TLS callbacks
 8. call the module's entry point (DllMain)
 */
+
+// TODO: this file should be a "bootstrapper" .dll that loads the rawbytes that exist in its .data section. These rawbytes should be the payload.dll
+
+
+/*
+
+*/
