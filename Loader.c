@@ -14,5 +14,18 @@
 
 
 /*
+ReflectiveLoader() function that external stager calls
+DWORD WINAPI ReflectiveLoader(LPVOID param);
+
+DllMain();
+
+TODO: load data that exists 
+LoadEngineThread();
+    - locates the engine dll bytes inside host.dll's memory storeage
+
+MapModuleFromMemory();
+
+EngineEntry() optional export inide engine dllpoint 
+
 
 */
