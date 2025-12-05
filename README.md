@@ -1,6 +1,7 @@
 # ReflectiveLoader-TODO-Rename-
 Multipurpose Loader:
 Reflective Loader for DLLs, Stripped DLLs, and Position Independent Code
+Based off of Athena: https://wikileaks.org/vault7/#Athena
 
 # Order Flow
 - stager
