@@ -61,7 +61,7 @@ void start()
 
 	// Calls LoadRemoteLibraryR to perform reflective DLL injection
 	// Loads targetDll into memory
-	hModule = LoadRemoteLibraryR(hProcess, lpBuffer, dwLength, NULL);
+	//hModule = LoadRemoteLibraryR(hProcess, lpBuffer, dwLength, NULL);
 	hModule = LoadLibraryManual(hProcess, lpBuffer, dwLength, NULL);
 
 	// Waits for the remote thread to finish

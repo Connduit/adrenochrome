@@ -50,7 +50,7 @@ typedef struct _PEB {
 	BYTE Reserved1[2];
 	BYTE BeingDebugged;
 	BYTE Reserved2[1];
-	PVOID Reserved3[2];
+	PVOID Reserved3[2]; // TODO: ImageBaseAddress?
 	PPEB_LDR_DATA Ldr;
     /*
 	PRTL_USER_PROCESS_PARAMETERS ProcessParameters;

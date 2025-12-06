@@ -13,10 +13,10 @@
 // TODO: this file should be a "bootstrapper" .dll that loads the rawbytes that exist in its .data section. These rawbytes should be the payload.dll
 
 
-/*
-ReflectiveLoader() function that external stager calls
-DWORD WINAPI ReflectiveLoader(LPVOID param);
-*/
+// ReflectiveLoader() function that external stager calls
+// TODO: add #define DLLEXPORT __declspec(dllexport)
+__declspec(dllexport) DWORD WINAPI ReflectiveLoader(LPVOID param)
+{}
 
 BOOL WINAPI DllMain(
     HINSTANCE hinstDLL,  // handle to DLL module
