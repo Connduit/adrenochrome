@@ -1,0 +1,58 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\Connor\\Documents\\Code\\C\u002B\u002B\\adrenochrome\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{78A7B88A-5CF4-487F-A42D-5BFE5C7D5440}|installer_project\\installer_project.vcxproj|C:\\Users\\Connor\\Documents\\Code\\C\u002B\u002B\\adrenochrome\\installer\\Installer.c||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{78A7B88A-5CF4-487F-A42D-5BFE5C7D5440}|installer_project\\installer_project.vcxproj|solutionrelative:installer\\Installer.c||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CA1FE5AC-5D70-4781-83D8-D8FA085CE177}|loader_project\\loader_project.vcxproj|C:\\Users\\Connor\\Documents\\Code\\C\u002B\u002B\\adrenochrome\\loader\\Loader.c||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{CA1FE5AC-5D70-4781-83D8-D8FA085CE177}|loader_project\\loader_project.vcxproj|solutionrelative:loader\\Loader.c||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 214,
+          "SelectedChildIndex": 2,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Loader.c",
+              "DocumentMoniker": "C:\\Users\\Connor\\Documents\\Code\\C\u002B\u002B\\adrenochrome\\loader\\Loader.c",
+              "RelativeDocumentMoniker": "loader\\Loader.c",
+              "ToolTip": "C:\\Users\\Connor\\Documents\\Code\\C\u002B\u002B\\adrenochrome\\loader\\Loader.c",
+              "RelativeToolTip": "loader\\Loader.c",
+              "ViewState": "AgIAAAwAAAAAAAAAAAAAABYAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000423|",
+              "WhenOpened": "2025-12-06T23:37:16.567Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Installer.c",
+              "DocumentMoniker": "C:\\Users\\Connor\\Documents\\Code\\C\u002B\u002B\\adrenochrome\\installer\\Installer.c",
+              "RelativeDocumentMoniker": "installer\\Installer.c",
+              "ToolTip": "C:\\Users\\Connor\\Documents\\Code\\C\u002B\u002B\\adrenochrome\\installer\\Installer.c",
+              "RelativeToolTip": "installer\\Installer.c",
+              "ViewState": "AgIAAFYAAAAAAAAAAAAAAGkAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000423|",
+              "WhenOpened": "2025-12-06T23:36:42.612Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
