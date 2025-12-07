@@ -89,6 +89,59 @@ DLLEXPORT ULONG_PTR WINAPI ReflectiveLoader(LPVOID lpParameter)
 	// the kernels base address and later this images newly loaded base address
 	ULONG_PTR baseAddress = (ULONG_PTR)pVirtualAlloc(NULL, ((PIMAGE_NT_HEADERS)pNTHeader)->OptionalHeader.SizeOfImage, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
 
+
+	// copy over dos header, dos stub, and pe header into baseAddress?
+	
+	// NOTE: SizeOfHeaders is the size of all the headers (from DosHeader to SectionHeaders)
+	uiValueA = ((PIMAGE_NT_HEADERS)uiHeaderValue)->OptionalHeader.SizeOfHeaders; // TODO: rename uiValueA variable
+	uiValueB = uiLibraryAddress; // store off address... libraryaddress is the address of where the target dll exist on the disk
+	uiValueC = uiBaseAddress; // store off address... baseAddress is where we are trying to write our dll into the process we are injecting it into
+
+	// we get the number of sections in the pe file, so we can write each section into memory 
+	uiValueE = ((PIMAGE_NT_HEADERS)uiHeaderValue)->FileHeader.NumberOfSections;
+
+
+	// uiValueA = the VA of the first section
+	// NOTE: OptionalHeader is the last field in PIMAGE_NT_HEADERS, so when we do 
+	// OptionalHeader + SizeOfOptionalHeader we get the address to the first section 
+	// header (these section headers point us to where its data lives).
+	// NOTE: the SectionHeader "block" in the PE file structure is a table of 
+	// every section's (of the pe file) header 
+	uiValueA = ( (ULONG_PTR)&((PIMAGE_NT_HEADERS)uiHeaderValue)->OptionalHeader + ((PIMAGE_NT_HEADERS)uiHeaderValue)->FileHeader.SizeOfOptionalHeader  );
+
+	// NOTE: loop through all the sections in the pe file
+	while(uiValueE--)
+	{
+
+		// uiValueC if the VA for this sections data
+		// NOTE: gets the address of the section's data we want to copy (this is the src)
+		uiValueC = (uiLibraryAddress + ((PIMAGE_SECTION_HEADER)uiValueA)->PointerToRawData); 
+
+		// uiValueB is the VA for this section
+		// NOTE: gets the address of where we want to copy the section's data into (this is the destination)
+		uiValueB = (uiBaseAddress + ((PIMAGE_SECTION_HEADER)uiValueA)->VirtualAddress);
+
+		// copy the section over
+		// NOTE: how many bytes we need to copy over (this is the section's size)
+		uiValueD = ((PIMAGE_SECTION_HEADER)uiValueA)->SizeOfRawData;
+
+		// NOTE: copy over the data for the section 1 byte at a time
+		while(uiValueD--)
+		{
+			*(BYTE *)uiValueB++ = *(BYTE *)uiValueC++;
+		}
+
+		// get the VA of the next section
+		uiValueA += sizeof( IMAGE_SECTION_HEADER  );
+	}
+
+	//uiValueB = the address of the import directory
+	uiValueB = (ULONG_PTR)&((PIMAGE_NT_HEADERS)uiHeaderValue)->OptionalHeader.DataDirectory[ IMAGE_DIRECTORY_ENTRY_IMPORT  ];
+
+	// we assume their is an import table to process
+	// uiValueC is the first entry in the import table
+	uiValueC = ( uiBaseAddress + ((PIMAGE_DATA_DIRECTORY)uiValueB)->VirtualAddress  );
+
 	// TODO: 
 	// TODO: 
 	// TODO: 
