@@ -1,4 +1,3 @@
-/* Loader.c */
 /*
 1. Locate the PE headers
 2. allocate memory for the image
@@ -13,10 +12,89 @@
 // TODO: this file should be a "bootstrapper" .dll that loads the rawbytes that exist in its .data section. These rawbytes should be the payload.dll
 
 #include "ReflectiveLoader.h"
+#include "GetModuleHandleManual.h"
+#include "GetProcAddressManual.h"
+
+
+
+#pragma intrinsic( _ReturnAddress ) // MSVC only
+// __builtin_return_address(0); // GCC/MinGW equivalent?
+
+// This function can not be inlined by the compiler or we will not get the address we expect. Ideally 
+// this code will be compiled with the /O2 and /Ob1 switches. Bonus points if we could take advantage of 
+// RIP relative addressing in this instance but I dont believe we can do so with the compiler intrinsics 
+// available (and no inline asm available under x64).
+__declspec(noinline) ULONG_PTR caller(VOID) { return (ULONG_PTR)_ReturnAddress(); }
+
 
 // ReflectiveLoader() function that external stager calls
-DLLEXPORT ULONG_PTR WINAPI ReflectiveLoader(LPVOID param)
+// DLLEXPORT ULONG_PTR WINAPI ReflectiveLoader(LPVOID lpReserved)
+DLLEXPORT ULONG_PTR WINAPI ReflectiveLoader(LPVOID lpParameter)
 {
+
+	ULONG_PTR uiLibraryAddress = caller(); // TODO: figure out a better name for this
+
+	//PIMAGE_NT_HEADERS pNTHeader = NULL;
+	PIMAGE_NT_HEADERS pNTHeader;
+
+	// loop through memory backwards searching for our image's base address
+	// we dont need SEH style search as we shouldnt generate any access violations with this
+	while (TRUE)
+	{
+		if (((PIMAGE_DOS_HEADER)uiLibraryAddress)->e_magic == IMAGE_DOS_SIGNATURE) // NOTE: checks if uiLibraryAddress points to the start of the DOS Header
+		{
+			// this is just the offset
+			pNTHeader = ((PIMAGE_DOS_HEADER)uiLibraryAddress)->e_lfanew; // NOTE: here, pNTHeader isn't a PIMAGE_NT_HEADERS but just an offset to it
+			// some x64 dll's can trigger a bogus signature (IMAGE_DOS_SIGNATURE == 'POP r10'),
+			// we sanity check the e_lfanew with an upper threshold value of 1024 to avoid problems.
+			if (pNTHeader >= sizeof(IMAGE_DOS_HEADER) && pNTHeader < 1024)
+			{
+				pNTHeader += uiLibraryAddress; // NOTE: now pNTHeader actually becomes a PIMAGE_NT_HEADERS
+				// break if we have found a valid MZ/PE header
+				if (((PIMAGE_NT_HEADERS)pNTHeader)->Signature == IMAGE_NT_SIGNATURE)
+					break;
+			}
+		}
+		uiLibraryAddress--;
+	}
+
+
+
+	// TODO: my code is a lot cleaner but by using a massive while loop like 
+	// here: https://github.com/stephenfewer/ReflectiveDLLInjection/blob/master/dll/src/ReflectiveLoader.c#L125-L262
+	// we can resolve everything in one pass through  
+
+	// TODO: i don't think i can use stuff like GetModuleHandleManual because i don't have 
+	// access yet to the rest of the dll
+	HMODULE kernel32_module = GetModuleHandleManual(L"kernel32.dll");
+	HMODULE ntdll_module = GetModuleHandleManual(L"ntdll.dll");
+
+	LOADLIBRARYA pLoadLibraryA = GetProcAddressManual(kernel32_module, "LoadLibraryA");
+
+	// TODO: is this one needed or can i just use GetProcAddressManual? i think i can just use manual
+	GETPROCADDRESS pGetProcAddress = GetProcAddressManual(kernel32_module, "GetProcAddress");
+	VIRTUALALLOC pVirtualAlloc = GetProcAddressManual(kernel32_module, "VirtualAlloc");
+	NTFLUSHINSTRUCTIONCACHE pNtFlushInstructionCache = GetProcAddressManual(kernel32_module, "NtFlushInstructionCache");
+
+	////////////////////////////////////////////////
+
+
+	pNTHeader = uiLibraryAddress + ((PIMAGE_DOS_HEADER)uiLibraryAddress)->e_lfanew;
+
+
+
+	// allocate all the memory for the DLL to be loaded into. we can load at any address because we will  
+	// relocate the image. Also zeros all memory and marks it as READ, WRITE and EXECUTE to avoid any problems.
+	// NOTE: the base address of the dll we are manually mapping.
+	// the kernels base address and later this images newly loaded base address
+	ULONG_PTR baseAddress = (ULONG_PTR)pVirtualAlloc(NULL, ((PIMAGE_NT_HEADERS)pNTHeader)->OptionalHeader.SizeOfImage, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+
+	// TODO: 
+	// TODO: 
+	// TODO: 
+	// TODO: 
+
+
 	return 0;
 }
 
@@ -25,52 +103,30 @@ BOOL APIENTRY DllMain(HMODULE hModule,
     LPVOID lpReserved
 )
 {
-    switch (ul_reason_for_call)
-    {
-    case DLL_PROCESS_ATTACH:
-    case DLL_THREAD_ATTACH:
-    case DLL_THREAD_DETACH:
-    case DLL_PROCESS_DETACH:
-        break;
-    }
+	switch (ul_reason_for_call)
+	{
+	case DLL_PROCESS_ATTACH:
+		// Initialize once for each new process.
+		// Return FALSE to fail DLL load.
+		break;
+	case DLL_THREAD_ATTACH:
+		// Do thread-specific initialization.
+		break;
+	case DLL_THREAD_DETACH:
+		// Do thread-specific cleanup.
+		break;
+	case DLL_PROCESS_DETACH:
+		if (lpReserved != NULL)
+		{
+			break; // do not do cleanup if process termination scenario
+		}
+		// Perform any necessary cleanup.
+		break;
+	}
     return TRUE;
 }
 
 
-/*
-BOOL WINAPI DllMain(
-    HINSTANCE hinstDLL,  // handle to DLL module
-    DWORD fdwReason,     // reason for calling function
-    LPVOID lpvReserved )  // reserved
-{
-    // Perform actions based on the reason for calling.
-    switch( fdwReason ) 
-    { 
-        case DLL_PROCESS_ATTACH:
-         // Initialize once for each new process.
-         // Return FALSE to fail DLL load.
-            break;
-
-        case DLL_THREAD_ATTACH:
-         // Do thread-specific initialization.
-            break;
-
-        case DLL_THREAD_DETACH:
-         // Do thread-specific cleanup.
-            break;
-
-        case DLL_PROCESS_DETACH:
-        
-            if (lpvReserved != nullptr)
-            {
-                break; // do not do cleanup if process termination scenario
-            }
-            
-         // Perform any necessary cleanup.
-            break;
-    }
-    return TRUE;  // Successful DLL_PROCESS_ATTACH.
-}*/
 /*
 
 TODO: load data that exists 

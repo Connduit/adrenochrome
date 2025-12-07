@@ -53,3 +53,13 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+
+# Visual Studio
+.vs/
+*.log
+*.tlog
+*.suo
+*.db
+x64/
+Debug/

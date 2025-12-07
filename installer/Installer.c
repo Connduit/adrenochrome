@@ -60,7 +60,6 @@ void start() // TODO: change to be DWORD WINAPI start(LPVOID lpParam)
 		}
 		CloseHandle(hToken);
 	}
-	
 
 	// Opens the target process with rights to write memory and create remote threads
 	HANDLE hProcess = OpenProcess(PROCESS_CREATE_THREAD | PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_WRITE | PROCESS_VM_READ, FALSE, dwProcessId);
@@ -94,9 +93,27 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 	switch (ul_reason_for_call)
 	{
 	case DLL_PROCESS_ATTACH:
+		// Initialize once for each new process.
+		// Return FALSE to fail DLL load.
+		DisableThreadLibraryCalls(hModule);
+		// NOTE: this is needed cuz calling start() without using CreateThread
+		// could cause loader lock problems 
+		// CreateThread(NULL: SecurityAttributes, 0: StackSize, start: function i want to run, NULL: paramter for start function, 0: Create flag settings... should thread run immeditly after creation, NULL: ptr to store thread identifier)
+		CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)start, NULL, 0, NULL);
+		//start();
+		break;
+
 	case DLL_THREAD_ATTACH:
+		// Do thread-specific initialization.
 	case DLL_THREAD_DETACH:
+		// Do thread-specific cleanup.
 	case DLL_PROCESS_DETACH:
+		if (lpReserved != NULL)
+		{
+			break; // do not do cleanup if process termination scenario
+		}
+
+		// Perform any necessary cleanup.
 		break;
 	}
 	return TRUE;
