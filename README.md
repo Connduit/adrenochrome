@@ -43,6 +43,7 @@ Based off of Athena: https://wikileaks.org/vault7/#Athena
 - manual mapping
 - reflective loading
 - process hollowing (probably don't need this)
+- in order to create a loader/manual_mapper (that lives in host.dll) that can load special files like .axe, we need to create a custom loader similar to https://github.com/monoxgas/sRDI/tree/master/ShellcodeRDI. But instead of assuming and using the meta data associated with a dll, we would need to embedd meta data associated with an .axe file.
 
 ### Helpful
 - https://github.com/rapid7/metasploit-framework/blob/master/docs/metasploit-framework.wiki/Using-ReflectiveDLL-Injection.md
