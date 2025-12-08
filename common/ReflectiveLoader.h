@@ -36,6 +36,12 @@ typedef DWORD (NTAPI* NTFLUSHINSTRUCTIONCACHE)
 
 
 ///////////////////////////////////////////////////
+// Custom sRDI
+#ifdef CUSTOM_SRDI
+// TODO: declare custom srdi functions here
+// ULONG_PTR LoadDLL(PBYTE pbModule, DWORD dwFunctionHash, LPVOID lpUserData, DWORD dwUserdataLen, PVOID pvShellcodeBase, DWORD dwFlags);
+#endif
+///////////////////////////////////////////////////
 
 typedef struct _UNICODE_STRING
 {
