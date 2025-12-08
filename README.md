@@ -43,3 +43,7 @@ Based off of Athena: https://wikileaks.org/vault7/#Athena
 - manual mapping
 - reflective loading
 - process hollowing (probably don't need this)
+
+### Helpful
+- https://github.com/rapid7/metasploit-framework/blob/master/docs/metasploit-framework.wiki/Using-ReflectiveDLL-Injection.md
+- https://github.com/fancycode/MemoryModule/blob/master/doc/readme.rst
