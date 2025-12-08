@@ -48,3 +48,6 @@ Based off of Athena: https://wikileaks.org/vault7/#Athena
 ### Helpful
 - https://github.com/rapid7/metasploit-framework/blob/master/docs/metasploit-framework.wiki/Using-ReflectiveDLL-Injection.md
 - https://github.com/fancycode/MemoryModule/blob/master/doc/readme.rst
+
+  ### Glossary
+  - DLL Shell: a dll that can be ran as if it was shellcode (if you know how to run it). It is structurally a DLL but packaged and executed like sRDI shellcode. It is a DLL + metadata + loader code bundled into a custom module format that still "appears" as a normal dll on disk
