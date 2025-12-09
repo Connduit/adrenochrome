@@ -1,6 +1,7 @@
 # === Compiler and flags ===
 CC  := x86_64-w64-mingw32-gcc
 CXX := x86_64-w64-mingw32-g++
+# STRICT_CFLAGS := -Wall -Wextra -Wpointer-arith -Wpointer-sign -Wconversion -Wcast-align -O0 -g -Icommon
 CFLAGS := -Wall -Wextra -O0 -g -Icommon
 CXXFLAGS := -std=c++17 -Wall -Wextra -O0 -g -Icommon
 LDFLAGS := -shared

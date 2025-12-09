@@ -51,6 +51,7 @@ typedef struct _UNICODE_STRING
 } UNICODE_STRING;
 typedef UNICODE_STRING *PUNICODE_STRING;
 
+// TODO: move all pe struct related info into its own header file called "PEStructs.h"
 
 typedef struct _LDR_DATA_TABLE_ENTRY {
     LIST_ENTRY InLoadOrderLinks; // PVOID Reserved1[2];

@@ -3,3 +3,4 @@
 
 # TODO
 - make another installer.dll except it uses https://github.com/monoxgas/sRDI/tree/master/ShellcodeRDI
+- create .def file to create a forwarding dll
