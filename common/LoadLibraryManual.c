@@ -355,6 +355,18 @@ HANDLE WINAPI LoadLibraryManual(
 			// TODO: instead of creating a remote thread here, hijack a thread instead? 
 			hThread = CreateRemoteThread(hProcess, NULL, 1024*1024, lpReflectiveLoader, lpParameter, (DWORD)NULL, &dwThreadId);
 
+			char dbg[256];
+			sprintf_s(dbg, sizeof dbg,
+				"LOADER\nlocal base=%p\nremote base=%p\nreflective RVA=%X\nthread entry=%p",
+				lpBuffer,
+				lpRemoteLibraryBuffer,
+				dwReflectiveLoaderOffset,    // THIS MUST BE RVA NOT OFFSET
+				lpReflectiveLoader
+			);
+			MessageBoxA(NULL, dbg, "DEBUG", MB_OK);
+
+
+			/*
 			DWORD after = before;
 			char dbg[256];
 			sprintf_s(dbg, sizeof(dbg),
@@ -363,7 +375,7 @@ HANDLE WINAPI LoadLibraryManual(
 				(unsigned int)after);  // DWORD is fine as unsigned int for %u
 
 			MessageBoxA(NULL, dbg, "DEBUG", MB_OK);
-
+			*/
 			if (!hThread)
 			{
 				MessageBoxA(NULL, "CreateRemoteThread fails", "Debug", MB_OK);

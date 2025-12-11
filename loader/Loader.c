@@ -52,10 +52,9 @@ __attribute__((noinline)) ULONG_PTR caller(void)
 //DLLEXPORT ULONG_PTR WINAPI ReflectiveLoader(LPVOID lpParameter)
 DLLEXPORT DWORD WINAPI ReflectiveLoader(LPVOID lpParameter)
 {
+	Beep(440, 500);
 	MessageBoxA(NULL, "Inside loader.dll::ReflectiveLoader()", "Debug", MB_OK);
 
-	return 0;
-	//Beep(440, 500);
 
 	// NOTE: caller() gives the return address of the instruction that called caller()
 	// which basically means it gives us the address to the next line of code in this function?
