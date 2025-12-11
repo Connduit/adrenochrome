@@ -95,9 +95,11 @@ DWORD WINAPI start(LPVOID lpParam) // TODO: change to be DWORD WINAPI start(LPVO
 	const char* host_process = "notepad.exe";
 	// obtain target process id... TODO: 
 	//DWORD dwProcessId = GetPIDByName(host_process);
-	// Beep(440, 500); // NOTE: heard
-	DWORD dwProcessId = 20112;
-	//DWORD dwProcessId = 0;
+	DWORD dwProcessId = 33160;
+
+	char buf[128]; // make sure the buffer is large enough
+	sprintf_s(buf, sizeof(buf), "PID = %lu", dwProcessId);
+	MessageBoxA(NULL, buf, "Debug", MB_OK);
 
 	//Beep(440, 500);
 	// open dll file from the disk

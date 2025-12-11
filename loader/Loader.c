@@ -51,6 +51,7 @@ __attribute__((noinline)) ULONG_PTR caller(void)
 // DLLEXPORT ULONG_PTR WINAPI ReflectiveLoader(LPVOID lpReserved)
 DLLEXPORT ULONG_PTR WINAPI ReflectiveLoader(LPVOID lpParameter)
 {
+	MessageBoxA(NULL, "Inside loader.dll::ReflectiveLoader()", "Debug", MB_OK);
 
 	//Beep(440, 500);
 

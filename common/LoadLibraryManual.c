@@ -5,8 +5,34 @@
 
 #include <stdio.h>
 
+DWORD Rva2Offset(DWORD dwRva, UINT_PTR fileBase)
+{
+	PIMAGE_DOS_HEADER pDos = (PIMAGE_DOS_HEADER)fileBase;
+	PIMAGE_NT_HEADERS pNt = (PIMAGE_NT_HEADERS)(fileBase + pDos->e_lfanew);
+	PIMAGE_SECTION_HEADER pSec = IMAGE_FIRST_SECTION(pNt);
+	// If RVA is in headers region, it maps to the same offset
+	DWORD headersSize = pNt->OptionalHeader.SizeOfHeaders;
+	if (dwRva < headersSize)
+		return dwRva;
+
+	for (DWORD i = 0; i < pNt->FileHeader.NumberOfSections; ++i)
+	{
+		DWORD secVA = pSec[i].VirtualAddress;
+		DWORD secVS = pSec[i].Misc.VirtualSize; // use VirtualSize to test range
+		DWORD secRaw = pSec[i].PointerToRawData;
+		if (dwRva >= secVA && dwRva < secVA + secVS)
+		{
+			return (dwRva - secVA) + secRaw;
+		}
+	}
+	// not found
+	MessageBoxA(NULL, "Rva2Offset returns 0", "Debug", MB_OK);
+	return 0;
+}
+
 
 //extern "C"
+/*
 DWORD Rva2Offset(DWORD dwRva, UINT_PTR dllBaseAddress)
 {
 	WORD wIndex                          = 0; // TODO: rename to something like sIndex or sectionIndex maybe?
@@ -53,13 +79,10 @@ DWORD Rva2Offset(DWORD dwRva, UINT_PTR dllBaseAddress)
 			// associated with the rva lives in the SectionHeader
 			return (dwRva - pSectionHeader[wIndex].VirtualAddress + pSectionHeader[wIndex].PointerToRawData);
 		}
-
 	}
-
 	return 0;
-
 }
-
+*/
 
 
 /* NOTES:
@@ -223,12 +246,26 @@ HANDLE WINAPI LoadLibraryManual(
 			}
 
 			// alloc memory (RWX) in the host process for the image...
+			/*
 			lpRemoteLibraryBuffer = VirtualAllocEx(hProcess, NULL, dwLength, MEM_RESERVE|MEM_COMMIT, PAGE_EXECUTE_READWRITE);
 			if (!lpRemoteLibraryBuffer)
 			{
 				MessageBoxA(NULL, "VirtualAllocEx fails", "Debug", MB_OK);
 				break;
+			}*/
+			if (!hProcess)
+			{
+				MessageBoxA(NULL, "hProcess is NULL", "Debug", MB_OK);
 			}
+
+
+			lpRemoteLibraryBuffer = VirtualAllocEx(hProcess, NULL, dwLength, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+			if (!lpRemoteLibraryBuffer)
+			{
+				MessageBoxA(NULL, "VirtualAllocEx fails", "Debug", MB_OK);
+				break;
+			}
+			MessageBoxA(NULL, "After virtualalloc", "Debug", MB_OK);
 
 			// write the image into the host process...
 			if (!WriteProcessMemory(hProcess, lpRemoteLibraryBuffer, lpBuffer, dwLength, NULL))
@@ -236,9 +273,11 @@ HANDLE WINAPI LoadLibraryManual(
 				MessageBoxA(NULL, "WriteProcessMemory fails", "Debug", MB_OK);
 				break;
 			}
+			MessageBoxA(NULL, "After writeprocessmemory", "Debug", MB_OK);
 
 			// add the offset to ReflectiveLoader() to the remote library address...
 			lpReflectiveLoader = (LPTHREAD_START_ROUTINE)( (ULONG_PTR)lpRemoteLibraryBuffer + dwReflectiveLoaderOffset  );
+			MessageBoxA(NULL, "After pointer arithmetic", "Debug", MB_OK);
 
 			// create a remote thread in the host process to call the ReflectiveLoader!
 			// 1024*1024 bytes == 1MB which represents the stack size of the new thread
@@ -249,17 +288,13 @@ HANDLE WINAPI LoadLibraryManual(
 			{
 				MessageBoxA(NULL, "CreateRemoteThread fails", "Debug", MB_OK);
 			}
+			MessageBoxA(NULL, "After createremotethread", "Debug", MB_OK);
 
 
 		} while( 0  );
 
+		MessageBoxA(NULL, "Success? End of LoadLibraryManual() function", "Debug", MB_OK);
 
-	// }
-	// __except( EXCEPTION_EXECUTE_HANDLER  )
-	// {
-	//     hThread = NULL;
-    //
-	// }
 
 	return hThread;
 
