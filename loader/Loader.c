@@ -49,10 +49,12 @@ __attribute__((noinline)) ULONG_PTR caller(void)
 
 // ReflectiveLoader() function that external stager calls
 // DLLEXPORT ULONG_PTR WINAPI ReflectiveLoader(LPVOID lpReserved)
-DLLEXPORT ULONG_PTR WINAPI ReflectiveLoader(LPVOID lpParameter)
+//DLLEXPORT ULONG_PTR WINAPI ReflectiveLoader(LPVOID lpParameter)
+DLLEXPORT DWORD WINAPI ReflectiveLoader(LPVOID lpParameter)
 {
 	MessageBoxA(NULL, "Inside loader.dll::ReflectiveLoader()", "Debug", MB_OK);
 
+	return 0;
 	//Beep(440, 500);
 
 	// NOTE: caller() gives the return address of the instruction that called caller()

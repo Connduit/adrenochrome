@@ -8,6 +8,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
-DLLEXPORT ULONG_PTR WINAPI ReflectiveLoader(LPVOID lpReserved);
+//DLLEXPORT ULONG_PTR WINAPI ReflectiveLoader(LPVOID lpReserved);
+DLLEXPORT DWORD WINAPI ReflectiveLoader(LPVOID lpReserved);
 
 #endif

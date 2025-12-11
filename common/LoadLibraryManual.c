@@ -279,6 +279,8 @@ HANDLE WINAPI LoadLibraryManual(
 			DWORD before = 0xDEADBEEF;
 			MessageBoxA(NULL, "Before CreateRemoteThread", "DEBUG", MB_OK);
 
+
+
 			// create a remote thread in the host process to call the ReflectiveLoader!
 			// 1024*1024 bytes == 1MB which represents the stack size of the new thread
 			// if the parameter is 0, it will use the default stack size
