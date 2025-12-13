@@ -27,6 +27,9 @@
     <ClCompile Include="..\common\LoadLibraryManual.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\loader\LoaderDll.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\loader\Loader.h">

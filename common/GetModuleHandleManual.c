@@ -1,6 +1,31 @@
 #include "GetModuleHandleManual.h"
 #include "ReflectiveLoader.h"
 
+char chrtoupper_i(char c)
+{
+    if (c >= 'a' && c <= 'z')
+        c -= 'a' - 'A';
+    return c;
+}
+
+int strcmp_i(const char* a, const char* b, size_t n)
+{
+    char ca, cb;
+    for (;;)
+    {
+        ca = *a;
+        cb = *b;
+        if (ca != cb || (n > 0 && --n == 0))
+            return ca - cb;
+
+        if (ca == 0)
+            return 0;
+
+        a++;
+        b++;
+    }
+}
+
 HMODULE GetModuleHandleManual(LPCWSTR lpModuleName)
 {
     //PPEB PebAddress = getPeb();
@@ -25,10 +50,14 @@ HMODULE GetModuleHandleManual(LPCWSTR lpModuleName)
     {
         pDataTableEntry = CONTAINING_RECORD(pList, LDR_DATA_TABLE_ENTRY, InMemoryOrderLinks);
 
+        // TODO: fix this string comparison... don't have access to it in a reflective loader
         //if (pDataTableEntry->BaseDllName.Buffer == lpModuleName)
-        if (_wcsicmp(pDataTableEntry->BaseDllName.Buffer, lpModuleName) == 0)
+        //if (_wcsicmp(pDataTableEntry->BaseDllName.Buffer, lpModuleName) == 0)
+        // TODO: function isn't comparing properly
+        if (strcmp_i(pDataTableEntry->BaseDllName.Buffer, lpModuleName, pDataTableEntry->BaseDllName.Length) == 0)
         {
-            return (HMODULE)pDataTableEntry->DllBase;
+	        return RDI_ERR_MY_CUSTOM_ERROR;
+            //return (HMODULE)pDataTableEntry->DllBase;
         }
         pList = pList->Flink;
     }

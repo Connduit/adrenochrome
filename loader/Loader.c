@@ -25,6 +25,9 @@
 HINSTANCE hAppInstance = NULL;
 
 
+
+
+
 #if defined(_MSC_VER)
 
 #pragma intrinsic( _ReturnAddress ) // MSVC only
@@ -53,11 +56,8 @@ __attribute__((noinline)) ULONG_PTR caller(void)
 // ReflectiveLoader() function that external stager calls
 // DLLEXPORT ULONG_PTR WINAPI ReflectiveLoader(LPVOID lpReserved)
 //DLLEXPORT ULONG_PTR WINAPI ReflectiveLoader(LPVOID lpParameter)
-DLLEXPORT DWORD WINAPI ReflectiveLoader(LPVOID lpParameter)
+DLLEXPORT DWORD WINAPI ReflectiveLoader(LPVOID lpParameter) // TODO: remove WINAPI and replace with __cdecl to prevent name mangling
 {
-	Beep(440, 500);
-	MessageBoxA(NULL, "Inside loader.dll::ReflectiveLoader()", "Debug", MB_OK);
-
 
 	// NOTE: caller() gives the return address of the instruction that called caller()
 	// which basically means it gives us the address to the next line of code in this function?
@@ -106,9 +106,12 @@ DLLEXPORT DWORD WINAPI ReflectiveLoader(LPVOID lpParameter)
 
 	// TODO: i don't think i can use stuff like GetModuleHandleManual/GetProcAddressManual? because i don't have 
 	// access yet to the rest of the dll
+
+	// TODO: coring is happening cuz of these functions
 	HMODULE kernel32_module = GetModuleHandleManual(L"kernel32.dll");
 	HMODULE ntdll_module = GetModuleHandleManual(L"ntdll.dll");
 
+	//return RDI_ERR_MY_CUSTOM_ERROR;
 	LOADLIBRARYA pLoadLibraryA = (LOADLIBRARYA)GetProcAddressManual(kernel32_module, "LoadLibraryA");
 
 	// TODO: is this one needed or can i just use GetProcAddressManual? i think i can just use manual
@@ -120,7 +123,6 @@ DLLEXPORT DWORD WINAPI ReflectiveLoader(LPVOID lpParameter)
 
 
 	pNTHeader = (PIMAGE_NT_HEADERS)((ULONG_PTR)rawImageBase + ((PIMAGE_DOS_HEADER)rawImageBase)->e_lfanew);
-
 
 
 	// allocate all the memory for the DLL to be loaded into. we can load at any address because we will  
@@ -387,6 +389,7 @@ DLLEXPORT DWORD WINAPI ReflectiveLoader(LPVOID lpParameter)
 }
 
 // TODO: HMODULE and HINSTANCE are the same... so choose one to use and change the rest for consitency
+/*
 BOOL APIENTRY DllMain(HMODULE hModule,
     DWORD  ul_reason_for_call,
     LPVOID lpReserved
@@ -421,7 +424,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 		break;
 	}
     return TRUE;
-}
+}*/
 
 
 /*

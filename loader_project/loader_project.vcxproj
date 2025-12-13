@@ -163,6 +163,7 @@
     <ClCompile Include="..\common\GetProcAddressManual.c" />
     <ClCompile Include="..\common\LoadLibraryManual.c" />
     <ClCompile Include="..\loader\Loader.c" />
+    <ClCompile Include="..\loader\LoaderDll.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\GetModuleHandleManual.h" />

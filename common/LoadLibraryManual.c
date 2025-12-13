@@ -292,7 +292,9 @@ HANDLE WINAPI LoadLibraryManual(
 	DWORD dwThreadId                          = 0;
 
 
+	printf("[+] Before GetReflectiveLoaderOffset. \n");
 	MessageBoxA(NULL, "Inside LoadLibraryManaul()", "Debug", MB_OK);
+
 
 	// __try
 	// {
@@ -309,6 +311,8 @@ HANDLE WINAPI LoadLibraryManual(
 				MessageBoxA(NULL, "GetReflectiveLoaderOffset fails", "Debug", MB_OK);
 				break;
 			}
+			printf("[+] offset value (decimal): %lu\n", dwReflectiveLoaderOffset);
+			printf("[+] offset value (hex): 0x%x\n", dwReflectiveLoaderOffset);
 
 			// alloc memory (RWX) in the host process for the image...
 			/*
