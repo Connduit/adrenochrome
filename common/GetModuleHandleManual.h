@@ -6,8 +6,9 @@
 #include <windows.h>
 
 // GetModuleHandle by literal name
-HMODULE GetModuleHandleManual(LPCWSTR lpModuleName);
-
+//HMODULE GetModuleHandleManual(LPCWSTR lpModuleName);
+//DWORD GetModuleHandleManual(LPCWSTR lpModuleName, HMODULE* hModule);
+DWORD GetModuleHandleManual(DWORD moduleHash, HMODULE* hModule);
 // GetModuleHandle by hash
 // TODO: rename, function overloading is not allowed in c
 // HMODULE GetModuleHandleManual(DWORD moduleHash);

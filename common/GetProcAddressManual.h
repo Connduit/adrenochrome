@@ -5,9 +5,9 @@
 #include <windows.h>
 
 // GetProcAddress by literal name
-FARPROC GetProcAddressManual(PVOID pModule, LPCSTR lpProcName);
-
+//FARPROC GetProcAddressManual(PVOID pModule, LPCSTR lpProcName);
 // GetProcAddress by hash
 //FARPROC GetProcAddressManual(HMODULE hModule, DWORD procHash);
+DWORD GetProcAddressManual(PVOID pModule, DWORD procHash, FARPROC* prod);
 
 #endif

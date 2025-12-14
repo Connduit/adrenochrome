@@ -18,16 +18,16 @@
     <ClCompile Include="..\loader\Loader.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\common\GetModuleHandleManual.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\common\GetProcAddressManual.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\common\LoadLibraryManual.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\loader\LoaderDll.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\GetModuleHandleManual.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\GetProcAddressManual.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -35,16 +35,16 @@
     <ClInclude Include="..\loader\Loader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\common\GetModuleHandleManual.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\common\GetProcAddressManual.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\common\LoadLibraryManual.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\common\ReflectiveLoader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\GetModuleHandleManual.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\GetProcAddressManual.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

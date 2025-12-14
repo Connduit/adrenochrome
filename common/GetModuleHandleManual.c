@@ -1,32 +1,17 @@
-#include "GetModuleHandleManual.h"
+﻿#include "GetModuleHandleManual.h"
 #include "ReflectiveLoader.h"
 
-char chrtoupper_i(char c)
+/*
+HMODULE GetModuleHandleManual(DWORD moduleHash)
 {
-    if (c >= 'a' && c <= 'z')
-        c -= 'a' - 'A';
-    return c;
+    return NULL;
 }
+*/
 
-int strcmp_i(const char* a, const char* b, size_t n)
-{
-    char ca, cb;
-    for (;;)
-    {
-        ca = *a;
-        cb = *b;
-        if (ca != cb || (n > 0 && --n == 0))
-            return ca - cb;
 
-        if (ca == 0)
-            return 0;
-
-        a++;
-        b++;
-    }
-}
-
-HMODULE GetModuleHandleManual(LPCWSTR lpModuleName)
+//HMODULE GetModuleHandleManual(LPCWSTR lpModuleName)
+//DWORD GetModuleHandleManual(LPCWSTR lpModuleName, HMODULE* hModule)
+DWORD GetModuleHandleManual(DWORD moduleHash, HMODULE* hModule)
 {
     //PPEB PebAddress = getPeb();
 #if defined(_WIN64)
@@ -54,15 +39,42 @@ HMODULE GetModuleHandleManual(LPCWSTR lpModuleName)
         //if (pDataTableEntry->BaseDllName.Buffer == lpModuleName)
         //if (_wcsicmp(pDataTableEntry->BaseDllName.Buffer, lpModuleName) == 0)
         // TODO: function isn't comparing properly
-        if (strcmp_i(pDataTableEntry->BaseDllName.Buffer, lpModuleName, pDataTableEntry->BaseDllName.Length) == 0)
+
+        ULONG_PTR buffer = (ULONG_PTR)(pDataTableEntry->BaseDllName.Buffer);
+        USHORT usCounter = pDataTableEntry->BaseDllName.Length;
+        ULONG_PTR hashResult = 0;
+
+        //////////////////////////////////////////////////
+        // compute the hash of the module name...
+        do
         {
-	        return RDI_ERR_MY_CUSTOM_ERROR;
-            //return (HMODULE)pDataTableEntry->DllBase;
+            hashResult = ror((DWORD)hashResult);
+            // normalize to uppercase if the madule name is in lowercase
+            if (*((BYTE*)buffer) >= 'a')
+                hashResult += *((BYTE*)buffer) - 0x20;
+            else
+                hashResult += *((BYTE*)buffer);
+            buffer++;
+        } while (--usCounter);
+
+
+        ///
+
+        //if ((DWORD)hashResult == KERNEL32DLL_HASH)
+        if ((DWORD)hashResult == moduleHash)
+        {
+			*hModule = (HMODULE)pDataTableEntry->DllBase;
+            return RDI_SUCCESS;
         }
-        pList = pList->Flink;
+
+        ///////////////////////////////////////////////////
+
+
+		pList = pList->Flink;
     }
 
-    return NULL;
+    return RDI_ERR_GET_MODULE_FAILS;
+    //return NULL;
     //return pModule;
 }
 

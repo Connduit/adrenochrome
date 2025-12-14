@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 
+/**/
 DWORD Rva2Offset(DWORD dwRva, UINT_PTR fileBase)
 {
 	PIMAGE_DOS_HEADER pDos = (PIMAGE_DOS_HEADER)fileBase;
@@ -98,7 +99,6 @@ DWORD Rva2Offset(DWORD dwRva, UINT_PTR dllBaseAddress)
 //extern "C"
 DWORD GetReflectiveLoaderOffset(VOID* lpReflectiveDllBuffer)
 {
-	MessageBoxA(NULL, "inside GetReflectiveLoaderOffset", "Debug", MB_OK);
 	UINT_PTR dllBaseAddress   = 0;
 	UINT_PTR uiExportDir     = 0; // PIMAGE_EXPORT_DIRECTORY?
 	UINT_PTR uiNameArray     = 0;
@@ -209,7 +209,7 @@ DWORD GetReflectiveLoaderOffset(VOID* lpReflectiveDllBuffer)
 	for (DWORD i = 0; i < numNames; ++i)
 	{
 		char * cpExportedFunctionName = (char *)(dllBaseAddress + Rva2Offset( DEREF_32( uiNameArray  ), dllBaseAddress  ));
-		MessageBoxA(NULL, cpExportedFunctionName, "Exported Function Name: ", MB_OK);
+		//MessageBoxA(NULL, cpExportedFunctionName, "Exported Function Name: ", MB_OK);
 
 
 		char* prodName = (char*)((ULONG_PTR)dllBaseAddress + Rva2Offset(arrayOfNamesRVAs[i], dllBaseAddress));
@@ -239,7 +239,6 @@ DWORD GetReflectiveLoaderOffset(VOID* lpReflectiveDllBuffer)
 		// get the next exported function name ordinal
 		uiNameOrdinals += sizeof(WORD);
 	}
-	MessageBoxA(NULL, "exiting func", "Debug", MB_OK);
 	
 
 
@@ -311,10 +310,7 @@ HANDLE WINAPI LoadLibraryManual(
 				MessageBoxA(NULL, "GetReflectiveLoaderOffset fails", "Debug", MB_OK);
 				break;
 			}
-			printf("[+] offset value (decimal): %lu\n", dwReflectiveLoaderOffset);
-			printf("[+] offset value (hex): 0x%x\n", dwReflectiveLoaderOffset);
-
-			// alloc memory (RWX) in the host process for the image...
+				// alloc memory (RWX) in the host process for the image...
 			/*
 			lpRemoteLibraryBuffer = VirtualAllocEx(hProcess, NULL, dwLength, MEM_RESERVE|MEM_COMMIT, PAGE_EXECUTE_READWRITE);
 			if (!lpRemoteLibraryBuffer)
@@ -344,7 +340,6 @@ HANDLE WINAPI LoadLibraryManual(
 
 			// add the offset to ReflectiveLoader() to the remote library address...
 			lpReflectiveLoader = (LPTHREAD_START_ROUTINE)( (ULONG_PTR)lpRemoteLibraryBuffer + dwReflectiveLoaderOffset  );
-			MessageBoxA(NULL, "After pointer arithmetic", "Debug", MB_OK);
 
 
 			// create a remote thread in the host process to call the ReflectiveLoader!

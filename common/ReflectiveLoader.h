@@ -34,7 +34,38 @@ typedef DWORD (NTAPI* NTFLUSHINSTRUCTIONCACHE)
 (HANDLE hProcess, PVOID lpBaseAddress, ULONG dwSize);
 
 
+///////////////////////////////////////////////////
 
+#define KERNEL32DLL_HASH				0x6A4ABC5B
+#define NTDLLDLL_HASH					0x3CFA685D
+
+#define LOADLIBRARYA_HASH				0xEC0E4E8E
+#define GETPROCADDRESS_HASH				0x7C0DFCAA
+#define VIRTUALALLOC_HASH				0x91AFCA54
+#define NTFLUSHINSTRUCTIONCACHE_HASH	0x534C0AB8
+
+///////////////////////////////////////////////////
+#define HASH_KEY						13
+//===============================================================================================//
+#pragma intrinsic( _rotr )
+
+__forceinline DWORD ror(DWORD d)
+{
+    return _rotr(d, HASH_KEY);
+}
+
+__forceinline DWORD hash(char* c)
+{
+    register DWORD h = 0;
+    do
+    {
+        h = ror(h);
+        h += *c;
+    } while (*++c);
+
+    return h;
+}
+//===============================================================================================//
 ///////////////////////////////////////////////////
 // Custom sRDI
 #ifdef CUSTOM_SRDI
@@ -55,6 +86,8 @@ typedef DWORD (NTAPI* NTFLUSHINSTRUCTIONCACHE)
 #define RDI_ERR_GETSYSCALLS_FAIL (RDI_ERR_BASE | 0x2400) // getSyscalls() failed
 // My Custom Codes
 #define RDI_ERR_MY_CUSTOM_ERROR (RDI_ERR_BASE | 0x4000) // 
+#define RDI_ERR_GET_MODULE_FAILS (RDI_ERR_BASE | 0x5000) // 
+#define RDI_ERR_FAKE_SUCCESS (RDI_ERR_BASE | 0x9000) // 
 ///////////////////////////////////////////////////
 
 typedef struct _UNICODE_STRING
