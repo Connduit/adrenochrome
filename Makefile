@@ -35,6 +35,7 @@ LOADER_OBJS := $(patsubst %.c,$(OBJ_DIR)/%.o,$(LOADER_CSOURCES)) \
 # === Output files ===
 INSTALLER_DLL := $(BIN_DIR)/installer.dll
 LOADER_DLL    := $(BIN_DIR)/loader.dll
+# TODO: INSTALLER_EXE
 
 # === Default target builds both DLLs ===
 all: $(INSTALLER_DLL) $(LOADER_DLL)
