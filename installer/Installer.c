@@ -69,7 +69,8 @@ DWORD WINAPI start(LPVOID lpParam) // TODO: change to be DWORD WINAPI start(LPVO
 
 
 	// look for target.dll on disk?
-	char* targetDll = "C:\\Users\\Connor\\Documents\\Code\\C++\\adrenochrome\\x64\\Release\\loader.dll"; // host.dll
+	//char* targetDll = "C:\\Users\\Connor\\Documents\\Code\\C++\\adrenochrome\\x64\\Release\\loader.dll"; // host.dll
+	char* targetDll = "C:\\Users\\Connor\\Documents\\Code\\C++\\adrenochrome\\x64\\Debug\\loader.dll"; // host.dll
 
 	// process to inject host.dll into
 	//const wchar_t* host_process = L"notepad.exe";

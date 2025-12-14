@@ -5,32 +5,6 @@
 
 #include <stdio.h>
 
-/*
-DWORD Rva2Offset(DWORD dwRva, UINT_PTR fileBase)
-{
-	PIMAGE_DOS_HEADER pDos = (PIMAGE_DOS_HEADER)fileBase;
-	PIMAGE_NT_HEADERS pNt = (PIMAGE_NT_HEADERS)(fileBase + pDos->e_lfanew);
-	PIMAGE_SECTION_HEADER pSec = IMAGE_FIRST_SECTION(pNt);
-	// If RVA is in headers region, it maps to the same offset
-	DWORD headersSize = pNt->OptionalHeader.SizeOfHeaders;
-	if (dwRva < headersSize)
-		return dwRva;
-
-	for (DWORD i = 0; i < pNt->FileHeader.NumberOfSections; ++i)
-	{
-		DWORD secVA = pSec[i].VirtualAddress;
-		DWORD secVS = pSec[i].Misc.VirtualSize; // use VirtualSize to test range
-		DWORD secRaw = pSec[i].PointerToRawData;
-		if (dwRva >= secVA && dwRva < secVA + secVS)
-		{
-			return (dwRva - secVA) + secRaw;
-		}
-	}
-	// not found
-	MessageBoxA(NULL, "Rva2Offset returns 0", "Debug", MB_OK);
-	return 0;
-}*/
-
 
 //extern "C"
 // NOTE: PIMAGE_OPTIONAL_HEADER->ImageBase == the preferred base address 
