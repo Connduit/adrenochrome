@@ -5,7 +5,7 @@
 
 #include <stdio.h>
 
-/**/
+/*
 DWORD Rva2Offset(DWORD dwRva, UINT_PTR fileBase)
 {
 	PIMAGE_DOS_HEADER pDos = (PIMAGE_DOS_HEADER)fileBase;
@@ -29,12 +29,11 @@ DWORD Rva2Offset(DWORD dwRva, UINT_PTR fileBase)
 	// not found
 	MessageBoxA(NULL, "Rva2Offset returns 0", "Debug", MB_OK);
 	return 0;
-}
+}*/
 
 
 //extern "C"
 // NOTE: PIMAGE_OPTIONAL_HEADER->ImageBase == the preferred base address 
-/*
 DWORD Rva2Offset(DWORD dwRva, UINT_PTR dllBaseAddress)
 {
 	WORD wIndex                          = 0; // TODO: rename to something like sIndex or sectionIndex maybe?
@@ -84,7 +83,6 @@ DWORD Rva2Offset(DWORD dwRva, UINT_PTR dllBaseAddress)
 	}
 	return 0;
 }
-*/
 
 
 /* NOTES:
@@ -375,7 +373,6 @@ HANDLE WINAPI LoadLibraryManual(
 			{
 				MessageBoxA(NULL, "CreateRemoteThread fails", "Debug", MB_OK);
 			}
-			MessageBoxA(NULL, "After createremotethread", "Debug", MB_OK);
 
 
 		} while( 0  );
