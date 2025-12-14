@@ -24,10 +24,6 @@
 // Our loader will set this to a pseudo correct HINSTANCE/HMODULE value
 HINSTANCE hAppInstance = NULL;
 
-
-
-
-
 #if defined(_MSC_VER)
 
 #pragma intrinsic( _ReturnAddress ) // MSVC only
@@ -150,11 +146,11 @@ DLLEXPORT DWORD WINAPI ReflectiveLoader(LPVOID lpParameter) // TODO: remove WINA
 	GETPROCADDRESS pGetProcAddress = NULL;
 	VIRTUALALLOC pVirtualAlloc = NULL;
 	NTFLUSHINSTRUCTIONCACHE pNtFlushInstructionCache = NULL;
-	status |= GetProcAddressManual(kernel32_module, LOADLIBRARYA_HASH, &pLoadLibraryA);
+	status |= GetProcAddressManual(kernel32_module, LOADLIBRARYA_HASH, (FARPROC*)&pLoadLibraryA);
 	// TODO: is this one needed or can i just use GetProcAddressManual? i think i can just use manual
-	status |= GetProcAddressManual(kernel32_module, GETPROCADDRESS_HASH, &pGetProcAddress);
-	status |= GetProcAddressManual(kernel32_module, VIRTUALALLOC_HASH, &pVirtualAlloc);
-	status |= GetProcAddressManual(ntdll_module, NTFLUSHINSTRUCTIONCACHE_HASH, &pNtFlushInstructionCache);
+	status |= GetProcAddressManual(kernel32_module, GETPROCADDRESS_HASH, (FARPROC*)&pGetProcAddress);
+	status |= GetProcAddressManual(kernel32_module, VIRTUALALLOC_HASH, (FARPROC*)&pVirtualAlloc);
+	status |= GetProcAddressManual(ntdll_module, NTFLUSHINSTRUCTIONCACHE_HASH, (FARPROC*)&pNtFlushInstructionCache);
 	if ((status & 0xF0000000) == 0xE0000000)
 	{
 		return status;
@@ -183,28 +179,6 @@ DLLEXPORT DWORD WINAPI ReflectiveLoader(LPVOID lpParameter) // TODO: remove WINA
 
 	DWORD sizeofRawData = 0;
 
-	// TODO: THIS works
-	/*
-	DWORD dwSizeOfHeaders = pNtHeader->OptionalHeader.SizeOfHeaders;
-	PBYTE pSourceBase = (PBYTE)rawImageBase; // reference variable to pSourceBase
-	PBYTE pDestinationBase = (PBYTE)baseAddress; // reference variable to pDestinationBase
-
-	while (dwSizeOfHeaders--)
-		*pDestinationBase++ = *pSourceBase++;
-
-
-	PIMAGE_SECTION_HEADER pSectionHeader = IMAGE_FIRST_SECTION(pNtHeader);
-	for (USHORT i = 0; i < pNtHeader->FileHeader.NumberOfSections; i++, pSectionHeader++)
-	{
-		PBYTE pDestination = (PBYTE)(baseAddress + pSectionHeader->VirtualAddress);
-		PBYTE pSource = (PBYTE)(rawImageBase + pSectionHeader->PointerToRawData);
-		DWORD dwSectionSize = pSectionHeader->SizeOfRawData;
-
-		while (dwSectionSize--)
-			*pDestination++ = *pSource++;
-	}
-	// TODO: THIS end
-	*/
 	////////////////////////////////////
 
 	// copy over dos header, dos stub, and pe header into baseAddress?
@@ -448,14 +422,23 @@ DLLEXPORT DWORD WINAPI ReflectiveLoader(LPVOID lpParameter) // TODO: remove WINA
 			for (ULONG i = 0; i < numRelocs; ++i, ++pReloc)
 			{
 
+				// TODO: make type casts in this if block more readable
 				if (pReloc->type == IMAGE_REL_BASED_DIR64)
+				{
 					*(ULONG_PTR*)((ULONG_PTR)relocBlockBase + pReloc->offset) += relocationDelta;
+				}
 				else if (pReloc->type == IMAGE_REL_BASED_HIGHLOW)
+				{
 					*(DWORD*)((ULONG_PTR)relocBlockBase + pReloc->offset) += (DWORD)relocationDelta;
+				}
 				else if (pReloc->type == IMAGE_REL_BASED_HIGH)
+				{
 					*(WORD*)((ULONG_PTR)relocBlockBase + pReloc->offset) += HIWORD(relocationDelta);
+				}
 				else if (pReloc->type == IMAGE_REL_BASED_LOW)
+				{
 					*(WORD*)((ULONG_PTR)relocBlockBase + pReloc->offset) += LOWORD(relocationDelta);
+				}
 
 				// perform the relocation, skipping IMAGE_REL_BASED_ABSOLUTE as required.
 				// we dont use a switch statement to avoid the compiler building a jump table

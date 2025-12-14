@@ -5,32 +5,6 @@
 
 #include <stdio.h>
 
-/*
-DWORD Rva2Offset(DWORD dwRva, UINT_PTR fileBase)
-{
-	PIMAGE_DOS_HEADER pDos = (PIMAGE_DOS_HEADER)fileBase;
-	PIMAGE_NT_HEADERS pNt = (PIMAGE_NT_HEADERS)(fileBase + pDos->e_lfanew);
-	PIMAGE_SECTION_HEADER pSec = IMAGE_FIRST_SECTION(pNt);
-	// If RVA is in headers region, it maps to the same offset
-	DWORD headersSize = pNt->OptionalHeader.SizeOfHeaders;
-	if (dwRva < headersSize)
-		return dwRva;
-
-	for (DWORD i = 0; i < pNt->FileHeader.NumberOfSections; ++i)
-	{
-		DWORD secVA = pSec[i].VirtualAddress;
-		DWORD secVS = pSec[i].Misc.VirtualSize; // use VirtualSize to test range
-		DWORD secRaw = pSec[i].PointerToRawData;
-		if (dwRva >= secVA && dwRva < secVA + secVS)
-		{
-			return (dwRva - secVA) + secRaw;
-		}
-	}
-	// not found
-	MessageBoxA(NULL, "Rva2Offset returns 0", "Debug", MB_OK);
-	return 0;
-}*/
-
 
 //extern "C"
 // NOTE: PIMAGE_OPTIONAL_HEADER->ImageBase == the preferred base address 
@@ -201,8 +175,8 @@ DWORD GetReflectiveLoaderOffset(VOID* lpReflectiveDllBuffer)
 
 	// loop through all the exported functions to find the ReflectiveLoader
 
-	DWORD targetFunctionAddress = NULL;
-	WORD targetFunctionAddressOffset = NULL;
+	DWORD targetFunctionAddress;  // TODO: should be 0
+	WORD targetFunctionAddressOffset; // TODO: should be 0 
 
 	for (DWORD i = 0; i < numNames; ++i)
 	{
@@ -237,39 +211,6 @@ DWORD GetReflectiveLoaderOffset(VOID* lpReflectiveDllBuffer)
 		// get the next exported function name ordinal
 		uiNameOrdinals += sizeof(WORD);
 	}
-	
-
-
-	/*
-	while( dwCounter--  )
-	{
-		// char* prodName = (char*)((ULONG_PTR)pModule + arrayOfNamesRVAs[i]); // dll loaded equivalent
-		char * cpExportedFunctionName = (char *)(dllBaseAddress + Rva2Offset( DEREF_32( uiNameArray  ), dllBaseAddress  ));
-		MessageBoxA(NULL, cpExportedFunctionName, "Exported Function Name: ", MB_OK);
-
-		if( strstr( cpExportedFunctionName, "ReflectiveLoader"  ) != NULL  ) // TODO: use variable instead of hardcoding "ReflectiveLoader"
-		{
-			// get the File Offset for the array of addresses
-			// TODO: this line is redundant, remove?
-			//uiAddressArray = dllBaseAddress + Rva2Offset( ((PIMAGE_EXPORT_DIRECTORY )uiExportDir)->AddressOfFunctions, dllBaseAddress  );
-
-			// use the functions name ordinal as an index into the array of name pointers
-			uiAddressArray += ( DEREF_16( uiNameOrdinals  ) * sizeof(DWORD)  );
-			//uiAddressArray = uiAddressArray[uiNameOrdinals[i]]; // TODO: update while loop to be a for loop so i can do this instead? 
-
-
-			// return the File Offset to the ReflectiveLoader() functions code...
-			DWORD result = Rva2Offset( DEREF_32( uiAddressArray  ), dllBaseAddress  );
-			return result;
-			//return Rva2Offset( DEREF_32( uiAddressArray  ), dllBaseAddress  );
-		}
-		// get the next exported function name
-		uiNameArray += sizeof(DWORD);
-
-		// get the next exported function name ordinal
-		uiNameOrdinals += sizeof(WORD);
-	}
-	*/
 	return 0;
 }
 
@@ -298,6 +239,7 @@ HANDLE WINAPI LoadLibraryManual(
 		// NOTE: do while loop is so break statements exit immeditly?
 		do
 		{
+			// TODO: remove this if? have these vars already been confirmed as non-null? 
 			if( !hProcess  || !lpBuffer || !dwLength  )
 				break;
 
@@ -307,18 +249,6 @@ HANDLE WINAPI LoadLibraryManual(
 			{
 				MessageBoxA(NULL, "GetReflectiveLoaderOffset fails", "Debug", MB_OK);
 				break;
-			}
-				// alloc memory (RWX) in the host process for the image...
-			/*
-			lpRemoteLibraryBuffer = VirtualAllocEx(hProcess, NULL, dwLength, MEM_RESERVE|MEM_COMMIT, PAGE_EXECUTE_READWRITE);
-			if (!lpRemoteLibraryBuffer)
-			{
-				MessageBoxA(NULL, "VirtualAllocEx fails", "Debug", MB_OK);
-				break;
-			}*/
-			if (!hProcess)
-			{
-				MessageBoxA(NULL, "hProcess is NULL", "Debug", MB_OK);
 			}
 
 
@@ -347,35 +277,13 @@ HANDLE WINAPI LoadLibraryManual(
 			//hThread = CreateRemoteThread(hProcess, NULL, 1024*1024, lpReflectiveLoader, lpParameter, (DWORD)NULL, &dwThreadId);
 			hThread = CreateRemoteThread(hProcess, NULL, 0, lpReflectiveLoader, lpParameter, (DWORD)NULL, &dwThreadId);
 
-			/*
-			char dbg[256];
-			sprintf_s(dbg, sizeof dbg,
-				"LOADER\nlocal base=%p\nremote base=%p\nreflective RVA=%X\nthread entry=%p",
-				lpBuffer,
-				lpRemoteLibraryBuffer,
-				dwReflectiveLoaderOffset,    // THIS MUST BE RVA NOT OFFSET
-				lpReflectiveLoader
-			);
-			MessageBoxA(NULL, dbg, "DEBUG", MB_OK);
-			*/
-
-			/*
-			DWORD after = before;
-			char dbg[256];
-			sprintf_s(dbg, sizeof(dbg),
-				"hThread=%p after=%u",
-				(void*)hThread,  // always cast HANDLE/pointer to void* for %p
-				(unsigned int)after);  // DWORD is fine as unsigned int for %u
-
-			MessageBoxA(NULL, dbg, "DEBUG", MB_OK);
-			*/
 			if (!hThread)
 			{
 				MessageBoxA(NULL, "CreateRemoteThread fails", "Debug", MB_OK);
 			}
 
 
-		} while( 0  );
+		} while(0);
 
 
 	return hThread;
