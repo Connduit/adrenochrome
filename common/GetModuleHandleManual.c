@@ -1,5 +1,7 @@
-﻿#include "GetModuleHandleManual.h"
-#include "ReflectiveLoader.h"
+﻿#include "PEStructs.h"
+#include "LoaderHashes.h"
+#include "GetModuleHandleManual.h"
+#include "ReflectiveLoaderStatusCodes.h"
 
 
 //HMODULE GetModuleHandleManual(LPCWSTR lpModuleName)

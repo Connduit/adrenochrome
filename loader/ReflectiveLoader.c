@@ -15,6 +15,8 @@
 // optimized. should probs revert back to fewer's code if i want optimize it in that way again
 
 #include "ReflectiveLoader.h"
+#include "LoaderHashes.h"
+#include "PEStructs.h"
 #include "ReflectiveLoaderStatusCodes.h" 
 
 #include "GetModuleHandleManual.h"
