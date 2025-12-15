@@ -159,7 +159,9 @@
     <ClInclude Include="..\common\GetModuleHandleManual.h" />
     <ClInclude Include="..\common\GetProcAddressManual.h" />
     <ClInclude Include="..\common\LoadLibraryManual.h" />
-    <ClInclude Include="..\common\ReflectiveLoader.h" />
+    <ClInclude Include="..\common\PEStructs.h" />
+    <ClInclude Include="..\common\StatusCodes.h" />
+    <ClInclude Include="..\common\Utils.h" />
     <ClInclude Include="..\installer\Installer.h" />
   </ItemGroup>
   <ItemGroup>

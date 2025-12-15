@@ -27,7 +27,13 @@
     <ClInclude Include="..\common\LoadLibraryManual.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\common\ReflectiveLoader.h">
+    <ClInclude Include="..\common\PEStructs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\StatusCodes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\Utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

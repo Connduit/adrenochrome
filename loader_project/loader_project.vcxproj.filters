@@ -30,6 +30,9 @@
     <ClCompile Include="..\common\GetProcAddressManual.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\loader\ReflectiveLoader.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\loader\Loader.h">
@@ -38,17 +41,32 @@
     <ClInclude Include="..\common\LoadLibraryManual.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\common\ReflectiveLoader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\common\GetModuleHandleManual.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\common\GetProcAddressManual.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\common\ReflectiveLoaderStatusCodes.h">
+    <ClInclude Include="..\common\PEStructs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\common\StatusCodes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\Utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\loader\LoaderDll.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\loader\LoaderHashes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\loader\ReflectiveLoader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\loader\README.md" />
   </ItemGroup>
 </Project>
