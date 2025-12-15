@@ -46,15 +46,16 @@ DLLEXPORT DWORD WINAPI ReflectiveLoader(LPVOID lpReserved);
 
 // TODO: 
 void loadModule(void); // load module into memory
-//ULONG_PTR getImageBase(void); // TODO: rename to initalizeLoader/initalizeLoaderContext? populate context...
+
+// TODO: move these into common or a subset of loader?
 BOOL initializeContext(PLOADER_CONTEXT ctx); 
 DWORD resolveDependencies(PLOADER_CONTEXT ctx);
 BOOL copyImageIntoMemory(PLOADER_CONTEXT ctx); // TODO: rename to loadImageIntoMemory() ?
 BOOL applyRelocations(PLOADER_CONTEXT ctx); 
 BOOL resolveImports(PLOADER_CONTEXT ctx);
-// void handleTLS(void); // void handleTLSCallbacks(void);
-// void setProtections(void); // ?
-// void callEntryPoint(void);
+// void handleTLS(void); // void handleTLSCallbacks(void); TODO
+// void setProtections(void); // TODO: rename to protectImageMemory ?
+BOOL callEntryPoint(PLOADER_CONTEXT ctx);
 ////////////////////////////////////////
 // getImports();
 // getExports();

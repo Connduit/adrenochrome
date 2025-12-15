@@ -153,7 +153,7 @@ DWORD resolveDependencies(PLOADER_CONTEXT ctx)
 	return RDI_SUCCESS;
 }
 
-// TODO: rename to loadImageIntoMemory() ?
+// TODO: rename to loadImageIntoMemory() or maybe just loadImage()?
 BOOL copyImageIntoMemory(PLOADER_CONTEXT ctx)
 {
 	//pNtHeader = (PIMAGE_NT_HEADERS)((ULONG_PTR)rawImageBase + ((PIMAGE_DOS_HEADER)rawImageBase)->e_lfanew);
