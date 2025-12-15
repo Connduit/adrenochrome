@@ -53,7 +53,9 @@ int main(int argc, char* argv[])
 #ifdef _DEBUG
 	cpDllFile = "C:\\Users\\Connor\\Documents\\Code\\C++\\adrenochrome\\x64\\Debug\\loader.dll"; // host.dll
 #elif NDEBUG
-	cpDllFile = "C:\\Users\\Connor\\Documents\\Code\\C++\\adrenochrome\\x64\\Release\\loader.dll"; // host.dll
+	// TODO: 
+	//cpDllFile = "C:\\Users\\Connor\\Documents\\Code\\C++\\adrenochrome\\x64\\Release\\loader.dll"; // host.dll
+	cpDllFile = "C:\\Users\\Conno\\Desktop\\files\\loader.dll";
 #endif
 #elif defined(_M_ARM64)
 	cpDllFile = "loader.dll";

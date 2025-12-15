@@ -1,4 +1,5 @@
-/* Loader.h */
+/* ReflectiveLoader.h */
+// This files is JUST for loading the reflective dll
 
 #ifndef ADRENOCHROME_REFLECTIVE_LOADER_H
 #define ADRENOCHROME_REFLECTIVE_LOADER_H

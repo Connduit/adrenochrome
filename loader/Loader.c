@@ -14,4 +14,8 @@ void loadFromSection()
 {}
 
 void loadFromDisk()
-{}
+{
+	char* filename = "path/to/file";
+	// decrypt(filename);
+	// decompress(filename);
+}

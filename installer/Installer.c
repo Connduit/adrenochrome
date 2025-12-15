@@ -70,7 +70,8 @@ DWORD WINAPI start(LPVOID lpParam)
 	// TODO: change to relative path
 	char* targetDll = "C:\\Users\\Connor\\Documents\\Code\\C++\\adrenochrome\\x64\\Debug\\loader.dll"; // host.dll
 #elif NDEBUG
-	char* targetDll = "C:\\Users\\Connor\\Documents\\Code\\C++\\adrenochrome\\x64\\Release\\loader.dll"; // host.dll
+	//char* targetDll = "C:\\Users\\Connor\\Documents\\Code\\C++\\adrenochrome\\x64\\Release\\loader.dll"; // host.dll
+	char* targetDll = "C:\\Users\\Conno\\Desktop\\files\\loader.dll";
 #else
 	// Linux
 	char* targetDll = "bin/loader.dll";
@@ -95,6 +96,7 @@ DWORD WINAPI start(LPVOID lpParam)
 	if (hFile == INVALID_HANDLE_VALUE)
 	{
 		MessageBoxA(NULL, "CreateFileA fails", "Debug", MB_OK);
+		return 1;
 	}
 
 	// get size of targetDll
@@ -102,6 +104,7 @@ DWORD WINAPI start(LPVOID lpParam)
 	if (dwLength == INVALID_FILE_SIZE || dwLength == 0)
 	{
 		MessageBoxA(NULL, "GetFileSize fails", "Debug", MB_OK);
+		return 1;
 	}
 
 	// allocate memory to write targetDll into memory
@@ -111,6 +114,7 @@ DWORD WINAPI start(LPVOID lpParam)
 	if (!lpBuffer)
 	{
 		MessageBoxA(NULL, "HeapAlloc fails", "Debug", MB_OK);
+		return 1;
 	}
 
 	DWORD dwBytesRead = 0;
@@ -121,6 +125,7 @@ DWORD WINAPI start(LPVOID lpParam)
 	if (!ReadFile(hFile, lpBuffer, dwLength, &dwBytesRead, NULL))
 	{
 		MessageBoxA(NULL, "ReadFile fails", "Debug", MB_OK);
+		return 1;
 	}
 
 	TOKEN_PRIVILEGES priv = {0};
@@ -137,7 +142,8 @@ DWORD WINAPI start(LPVOID lpParam)
 		{
 			if (AdjustTokenPrivileges(hToken, FALSE, &priv, 0, NULL, NULL) == FALSE)
 			{
-				MessageBoxA(NULL, "AdjustTokenPrivileges", "Debug", MB_OK);
+				MessageBoxA(NULL, "AdjustTokenPrivileges fails", "Debug", MB_OK);
+				return 1;
 			}
 		}
 		CloseHandle(hToken);

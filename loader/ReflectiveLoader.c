@@ -51,6 +51,12 @@ __attribute__((noinline)) ULONG_PTR caller(void)
 	#error Unsupported Compiler
 #endif
 
+// TODO:
+// TODO:
+// TODO:
+// split up the steps in reflective loader into separate functions so i can reuse 
+// them in the custom loader (Loader.c/h) when trying to manually map .axe files
+
 
 // TODO: this needs extern "C" if i ever plan to use c++
 // ReflectiveLoader() function that external stager calls
