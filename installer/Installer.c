@@ -57,7 +57,6 @@ DWORD WINAPI start(LPVOID lpParam) // TODO: change to be DWORD WINAPI start(LPVO
 {
 
 	MessageBoxA(NULL, "Inside start()", "Debug", MB_OK);
-
 	// do while loop start // TODO: add this if i want the ability to add error handling with break statements?
 
 
@@ -70,7 +69,7 @@ DWORD WINAPI start(LPVOID lpParam) // TODO: change to be DWORD WINAPI start(LPVO
 
 	// look for target.dll on disk?
 	//char* targetDll = "C:\\Users\\Connor\\Documents\\Code\\C++\\adrenochrome\\x64\\Release\\loader.dll"; // host.dll
-	char* targetDll = "C:\\Users\\Connor\\Documents\\Code\\C++\\adrenochrome\\x64\\Debug\\loader.dll"; // host.dll
+	char* targetDll = "C:\\Users\\Connor\\Documents\\Code\\C++\\adrenochrome\\x64\\Release\\loader.dll"; // host.dll
 
 	// process to inject host.dll into
 	//const wchar_t* host_process = L"notepad.exe";
@@ -171,7 +170,6 @@ DWORD WINAPI start(LPVOID lpParam) // TODO: change to be DWORD WINAPI start(LPVO
 	{
 		CloseHandle(hProcess);
 	}
-
 	return 0;
 }
 
@@ -183,7 +181,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 	switch (ul_reason_for_call)
 	{
 	case DLL_PROCESS_ATTACH:
-		MessageBoxA(NULL, "DLL_PROCESS_ATTACH reached!", "DEBUG", MB_OK);
+		//MessageBoxA(NULL, "DLL_PROCESS_ATTACH reached!", "DEBUG", MB_OK);
 		// Initialize once for each new process.
 		// Return FALSE to fail DLL load.
 		DisableThreadLibraryCalls(hModule);

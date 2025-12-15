@@ -38,6 +38,9 @@ Based off of Athena: https://wikileaks.org/vault7/#Athena
 - payload.dll/engine.dll
     - does whatever logic is defined in payload.dll/engine.dll
 
+### Notes
+- if using installer.dll, injector (Xenos) must have injection type set to Native Inject
+
 ### TODO?
 - thread hijacking
 - manual mapping
