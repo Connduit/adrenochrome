@@ -63,3 +63,6 @@ dkms.conf
 *.db
 x64/
 Debug/
+
+# Misc
+compile_flags.txt

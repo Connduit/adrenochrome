@@ -6,7 +6,7 @@
 #ifndef REFLECTIVE_LOADER_H // TODO: rename to ADRENCHROME_REFLECTIVE_LOADER_H ? 
 #define REFLECTIVE_LOADER_H
 
-#include "ReflectiveLoaderStatusCodes.h"
+//#include "ReflectiveLoaderStatusCodes.h" TODO: not needed here, should be included directly in the files that use it
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h> // TODO: eventually remove

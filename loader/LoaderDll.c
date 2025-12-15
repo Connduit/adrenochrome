@@ -15,7 +15,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD dwReason, LPVOID lpReserved)
 	BOOL bReturnValue = TRUE;
 	switch (dwReason)
 	{
-	case DLL_QUERY_HMODULE:
+	case DLL_QUERY_HMODULE: // TODO: remove? not needed anymore or ever?
 		if (lpReserved != NULL)
 			*(HMODULE*)lpReserved = hAppInstance;
 		break;

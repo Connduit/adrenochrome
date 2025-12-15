@@ -3,8 +3,6 @@
 #include "LoadLibraryManual.h"
 
 
-#include <stdio.h>
-
 
 //extern "C"
 // NOTE: PIMAGE_OPTIONAL_HEADER->ImageBase == the preferred base address 

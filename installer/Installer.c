@@ -15,11 +15,7 @@
 #include <windows.h>
 
 #include <stdio.h>
-
 #include <tlhelp32.h>
-// NOTE: temp helper function for debugging
-#include <tchar.h>
-
 
 DWORD GetPidFromName(const wchar_t* name)
 {
@@ -53,7 +49,8 @@ DWORD GetPidFromName(const wchar_t* name)
 
 // Adapted from:
 // https://github.com/stephenfewer/ReflectiveDLLInjection/blob/master/inject/src/Inject.c
-DWORD WINAPI start(LPVOID lpParam) // TODO: change to be DWORD WINAPI start(LPVOID lpParam)
+// TODO: rename func?
+DWORD WINAPI start(LPVOID lpParam)
 {
 
 	MessageBoxA(NULL, "Inside start()", "Debug", MB_OK);
@@ -69,9 +66,14 @@ DWORD WINAPI start(LPVOID lpParam) // TODO: change to be DWORD WINAPI start(LPVO
 
 	// look for target.dll on disk?
 #ifdef _DEBUG
+	// Windows
+	// TODO: change to relative path
 	char* targetDll = "C:\\Users\\Connor\\Documents\\Code\\C++\\adrenochrome\\x64\\Debug\\loader.dll"; // host.dll
 #elif NDEBUG
 	char* targetDll = "C:\\Users\\Connor\\Documents\\Code\\C++\\adrenochrome\\x64\\Release\\loader.dll"; // host.dll
+#else
+	// Linux
+	char* targetDll = "bin/loader.dll";
 #endif
 
 
@@ -115,8 +117,8 @@ DWORD WINAPI start(LPVOID lpParam) // TODO: change to be DWORD WINAPI start(LPVO
 	// reads the entire dll into memory
 	// NOTE: here is where we're actually writing the contents of the targetDll
 	// from the disk into the memory we just allocated for it on the Heap 
-	BOOL successful_read = ReadFile(hFile, lpBuffer, dwLength, &dwBytesRead, NULL);
-	if (successful_read == FALSE)
+	
+	if (!ReadFile(hFile, lpBuffer, dwLength, &dwBytesRead, NULL))
 	{
 		MessageBoxA(NULL, "ReadFile fails", "Debug", MB_OK);
 	}
@@ -148,6 +150,7 @@ DWORD WINAPI start(LPVOID lpParam) // TODO: change to be DWORD WINAPI start(LPVO
 	if (!hProcess)
 	{
 		MessageBoxA(NULL, "OpenProcess fails", "Debug", MB_OK);
+		return 1;
 	}
 
 	// Calls LoadRemoteLibraryR to perform reflective DLL injection
