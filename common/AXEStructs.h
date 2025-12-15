@@ -1,6 +1,9 @@
 #ifndef AXE_STRUCTS_H
 #define AXE_STRUCTS_H
 
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h> // NOTE: needed for __forceinline
+
 typedef struct _AXE_HEADER {
     DWORD Magic;             // e.g., 0x58454121 = "AXE!" (NOT MZ)
     WORD  Version;           // Format version

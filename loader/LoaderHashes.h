@@ -1,8 +1,6 @@
 #ifndef ADRENOCHROME_LOADER_HASHES_H
 #define ADRENOCHROME_LOADER_HASHES_H
 
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h> // NOTE: needed for __forceinline
 
 // TODO: ideally these would be computed "on the fly" in c++
 // by using a constexpr function
@@ -17,24 +15,6 @@
 ///////////////////////////////////////////////////
 #define HASH_KEY						13
 //===============================================================================================//
-#pragma intrinsic( _rotr )
-
-__forceinline DWORD ror(DWORD d)
-{
-    return _rotr(d, HASH_KEY);
-}
-
-__forceinline DWORD hash(char* c)
-{
-    register DWORD h = 0;
-    do
-    {
-        h = ror(h);
-        h += *c;
-    } while (*++c);
-
-    return h;
-}
 
 
 #endif

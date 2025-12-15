@@ -1,6 +1,6 @@
-#include "LoaderHashes.h"
+#include "Utils.h"
 #include "GetProcAddressManual.h"
-#include "ReflectiveLoaderStatusCodes.h"
+#include "StatusCodes.h"
 
 
 // TODO: rename pModule to hModule?

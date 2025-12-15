@@ -17,7 +17,7 @@
 #include "ReflectiveLoader.h"
 #include "LoaderHashes.h"
 #include "PEStructs.h"
-#include "ReflectiveLoaderStatusCodes.h" 
+#include "StatusCodes.h" 
 
 #include "GetModuleHandleManual.h"
 #include "GetProcAddressManual.h"
