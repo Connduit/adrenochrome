@@ -50,7 +50,11 @@ int main(int argc, char* argv[])
 	// Set the default DLL name based on the architecture of this injector.
 	// This ensures we inject a DLL of the same architecture.
 #if defined(_M_X64)
-	cpDllFile = "C:\\Users\\Connor\\Documents\\Code\\C++\\adrenochrome\\x64\\Release\\loader.dll";
+#ifdef _DEBUG
+	cpDllFile = "C:\\Users\\Connor\\Documents\\Code\\C++\\adrenochrome\\x64\\Debug\\loader.dll"; // host.dll
+#elif NDEBUG
+	cpDllFile = "C:\\Users\\Connor\\Documents\\Code\\C++\\adrenochrome\\x64\\Release\\loader.dll"; // host.dll
+#endif
 #elif defined(_M_ARM64)
 	cpDllFile = "loader.dll";
 #elif defined(_M_IX86)

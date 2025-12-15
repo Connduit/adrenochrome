@@ -1,12 +1,15 @@
 /* ReflectiveLoader.h */
 // TODO: defined all the structs/types needed 
 
-#ifndef REFLECTIVE_LOADER_H
+// TODO: move or reorganize this file
+
+#ifndef REFLECTIVE_LOADER_H // TODO: rename to ADRENCHROME_REFLECTIVE_LOADER_H ? 
 #define REFLECTIVE_LOADER_H
+
+#include "ReflectiveLoaderStatusCodes.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h> // TODO: eventually remove
-
 
 
 #define DLL_QUERY_HMODULE 6
@@ -36,6 +39,8 @@ typedef DWORD (NTAPI* NTFLUSHINSTRUCTIONCACHE)
 
 ///////////////////////////////////////////////////
 
+// TODO: ideally these would be computed "on the fly" in c++
+// by using a constexpr function
 #define KERNEL32DLL_HASH				0x6A4ABC5B
 #define NTDLLDLL_HASH					0x3CFA685D
 
@@ -73,21 +78,6 @@ __forceinline DWORD hash(char* c)
 // ULONG_PTR LoadDLL(PBYTE pbModule, DWORD dwFunctionHash, LPVOID lpUserData, DWORD dwUserdataLen, PVOID pvShellcodeBase, DWORD dwFlags);
 #endif
 ///////////////////////////////////////////////////
-///////////////////////////////////////////////////
-#define RDI_ERR_BASE 0xE0000000
-#define RDI_SUCCESS (0x00000001)
-#define RDI_ERR_FIND_IMAGE_BASE (RDI_ERR_BASE | 0x1000)
-#define RDI_ERR_RESOLVE_DEPS (RDI_ERR_BASE | 0x2000) // Generic dependency failure
-#define RDI_ERR_ALLOC_MEM (RDI_ERR_BASE | 0x3000)
-// Granular codes for dependency resolution:
-#define RDI_ERR_NO_KERNEL32 (RDI_ERR_BASE | 0x2100)		 // Failed to find kernel32.dll by hash
-#define RDI_ERR_NO_NTDLL (RDI_ERR_BASE | 0x2200)		 // Failed to find ntdll.dll by hash
-#define RDI_ERR_NO_EXPORTS (RDI_ERR_BASE | 0x2300)		 // Found kernel32, but couldn't find required exports
-#define RDI_ERR_GETSYSCALLS_FAIL (RDI_ERR_BASE | 0x2400) // getSyscalls() failed
-// My Custom Codes
-#define RDI_ERR_MY_CUSTOM_ERROR (RDI_ERR_BASE | 0x4000) // 
-#define RDI_ERR_GET_MODULE_FAILS (RDI_ERR_BASE | 0x5000) // 
-#define RDI_ERR_FAKE_SUCCESS (RDI_ERR_BASE | 0x9000) // 
 ///////////////////////////////////////////////////
 
 typedef struct _UNICODE_STRING

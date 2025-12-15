@@ -152,13 +152,13 @@ DWORD GetReflectiveLoaderOffset(VOID* lpReflectiveDllBuffer)
 	// get the File Offset for the array of name pointers
 	// NOTE: this is an array of RVAs where each rva helps give an  exported function's name (as a literal char* )
 	// TODO: rename var
-	uiNameArray = dllBaseAddress + Rva2Offset(((PIMAGE_EXPORT_DIRECTORY)pExportDir)->AddressOfNames, dllBaseAddress);
+	//uiNameArray = dllBaseAddress + Rva2Offset(((PIMAGE_EXPORT_DIRECTORY)pExportDir)->AddressOfNames, dllBaseAddress);
 	DWORD* arrayOfNamesRVAs = (DWORD*)(dllBaseAddress + Rva2Offset(((PIMAGE_EXPORT_DIRECTORY)pExportDir)->AddressOfNames, dllBaseAddress));
 
 	// get the File Offset for the array of addresses
 	// NOTE: this is an array of RVAs where each rva helps give an address to a specific exported function
 	// TODO: rename var
-	uiAddressArray = dllBaseAddress + Rva2Offset( ((PIMAGE_EXPORT_DIRECTORY )pExportDir)->AddressOfFunctions, dllBaseAddress  );
+	//uiAddressArray = dllBaseAddress + Rva2Offset( ((PIMAGE_EXPORT_DIRECTORY )pExportDir)->AddressOfFunctions, dllBaseAddress  );
 	DWORD* arrayOfFunctionRVAs = (DWORD*)(dllBaseAddress + Rva2Offset(((PIMAGE_EXPORT_DIRECTORY)pExportDir)->AddressOfFunctions, dllBaseAddress));
 
 	// get the File Offset for the array of name ordinals
@@ -166,7 +166,7 @@ DWORD GetReflectiveLoaderOffset(VOID* lpReflectiveDllBuffer)
 	// This is needed because not all exported functions have names. so a function name my have an index of 1, but it's actual address is at 
 	// index 4. The oridinal index it what tells us to use index 4
 	// TODO: rename var?
-	uiNameOrdinals = dllBaseAddress + Rva2Offset( ((PIMAGE_EXPORT_DIRECTORY )pExportDir)->AddressOfNameOrdinals, dllBaseAddress  );
+	//uiNameOrdinals = dllBaseAddress + Rva2Offset( ((PIMAGE_EXPORT_DIRECTORY )pExportDir)->AddressOfNameOrdinals, dllBaseAddress  );
 	WORD* arrayOfNameOrdinals = (WORD*)(dllBaseAddress + Rva2Offset(((PIMAGE_EXPORT_DIRECTORY)pExportDir)->AddressOfNameOrdinals, dllBaseAddress));
 
 	// get a counter for the number of exported functions...
@@ -175,41 +175,24 @@ DWORD GetReflectiveLoaderOffset(VOID* lpReflectiveDllBuffer)
 
 	// loop through all the exported functions to find the ReflectiveLoader
 
-	DWORD targetFunctionAddress;  // TODO: should be 0
-	WORD targetFunctionAddressOffset; // TODO: should be 0 
+	// TODO: remove these... not needed anymore
+	//DWORD targetFunctionAddress;  // TODO: should be 0
+	//DWORD targetFunctionAddressOffset; // TODO: should be 0 
 
 	for (DWORD i = 0; i < numNames; ++i)
 	{
-		char * cpExportedFunctionName = (char *)(dllBaseAddress + Rva2Offset( DEREF_32( uiNameArray  ), dllBaseAddress  ));
+		//char * cpExportedFunctionName = (char *)(dllBaseAddress + Rva2Offset( DEREF_32( uiNameArray  ), dllBaseAddress  ));
 		//MessageBoxA(NULL, cpExportedFunctionName, "Exported Function Name: ", MB_OK);
 
 
-		char* prodName = (char*)((ULONG_PTR)dllBaseAddress + Rva2Offset(arrayOfNamesRVAs[i], dllBaseAddress));
-		if (strstr(prodName, "ReflectiveLoader") != NULL)
+		char* prodName = (char*)((ULONG_PTR)dllBaseAddress + Rva2Offset(arrayOfNamesRVAs[i], dllBaseAddress)); // TODO: ULONG_PTR type cast isn't needed?
+		if (strstr(prodName, "ReflectiveLoader") != NULL) // TODO: do not hardcode reflective loader function name that we're using as an entry point
 		{
-			//uiAddressArray = dllBaseAddress + Rva2Offset( ((PIMAGE_EXPORT_DIRECTORY )uiExportDir)->AddressOfFunctions, dllBaseAddress  );
 			//targetFunctionAddress = dllBaseAddress + Rva2Offset(arrayOfFunctionRVAs[arrayOfNameOrdinals[i]], dllBaseAddress);
-			targetFunctionAddressOffset = Rva2Offset(arrayOfFunctionRVAs[arrayOfNameOrdinals[i]], dllBaseAddress);
-
-			// use the functions name ordinal as an index into the array of name pointers
-			uiAddressArray += ( DEREF_16( uiNameOrdinals  ) * sizeof(DWORD)  );
-
-
-			// return the File Offset to the ReflectiveLoader() functions code...
-			DWORD result2 = Rva2Offset( DEREF_32( uiAddressArray  ), dllBaseAddress  );
-
-			//DWORD result = Rva2Offset(DEREF_32(targetFunctionAddress), dllBaseAddress);
-			//DWORD result = Rva2Offset(targetFunctionAddress, dllBaseAddress);
-			return targetFunctionAddressOffset;
-			//return result;
-			//return Rva2Offset( DEREF_32( uiAddressArray  ), dllBaseAddress  );
-
+			//targetFunctionAddressOffset = Rva2Offset(arrayOfFunctionRVAs[arrayOfNameOrdinals[i]], dllBaseAddress);
+			//return targetFunctionAddressOffset;
+			return Rva2Offset(arrayOfFunctionRVAs[arrayOfNameOrdinals[i]], dllBaseAddress);
 		}
-		// get the next exported function name
-		uiNameArray += sizeof(DWORD);
-
-		// get the next exported function name ordinal
-		uiNameOrdinals += sizeof(WORD);
 	}
 	return 0;
 }
@@ -230,7 +213,6 @@ HANDLE WINAPI LoadLibraryManual(
 	DWORD dwThreadId                          = 0;
 
 
-	printf("[+] Before GetReflectiveLoaderOffset. \n");
 	MessageBoxA(NULL, "Inside LoadLibraryManaul()", "Debug", MB_OK);
 
 
@@ -275,7 +257,7 @@ HANDLE WINAPI LoadLibraryManual(
 			// if the parameter is 0, it will use the default stack size
 			// TODO: instead of creating a remote thread here, hijack a thread instead? 
 			//hThread = CreateRemoteThread(hProcess, NULL, 1024*1024, lpReflectiveLoader, lpParameter, (DWORD)NULL, &dwThreadId);
-			hThread = CreateRemoteThread(hProcess, NULL, 0, lpReflectiveLoader, lpParameter, (DWORD)NULL, &dwThreadId);
+			hThread = CreateRemoteThread(hProcess, NULL, 0, lpReflectiveLoader, lpParameter, 0, &dwThreadId);
 
 			if (!hThread)
 			{

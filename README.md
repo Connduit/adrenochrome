@@ -40,6 +40,7 @@ Based off of Athena: https://wikileaks.org/vault7/#Athena
 
 ### Notes
 - if using installer.dll, injector (Xenos) must have injection type set to Native Inject
+- cannot inject installer.dll into the same process as loader.dll
 
 ### TODO?
 - thread hijacking

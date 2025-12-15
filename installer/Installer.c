@@ -68,8 +68,12 @@ DWORD WINAPI start(LPVOID lpParam) // TODO: change to be DWORD WINAPI start(LPVO
 
 
 	// look for target.dll on disk?
-	//char* targetDll = "C:\\Users\\Connor\\Documents\\Code\\C++\\adrenochrome\\x64\\Release\\loader.dll"; // host.dll
+#ifdef _DEBUG
+	char* targetDll = "C:\\Users\\Connor\\Documents\\Code\\C++\\adrenochrome\\x64\\Debug\\loader.dll"; // host.dll
+#elif NDEBUG
 	char* targetDll = "C:\\Users\\Connor\\Documents\\Code\\C++\\adrenochrome\\x64\\Release\\loader.dll"; // host.dll
+#endif
+
 
 	// process to inject host.dll into
 	//const wchar_t* host_process = L"notepad.exe";
@@ -154,6 +158,7 @@ DWORD WINAPI start(LPVOID lpParam) // TODO: change to be DWORD WINAPI start(LPVO
 	if (!hModule)
 	{
 		MessageBoxA(NULL, "LoadLibraryManual fails", "Debug", MB_OK);
+		return 1; // fails
 	}
 
 	// Waits for the remote thread to finish
