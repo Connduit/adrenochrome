@@ -6,8 +6,6 @@
 #include <windows.h> // NOTE: needed for __forceinline
 
 
-#include <string>
-
 class AdrenochromeBuilder
 {
 public:

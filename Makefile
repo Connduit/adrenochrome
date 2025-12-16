@@ -6,7 +6,7 @@ CXXFLAGS:= -std=c++17 -Wall -Wextra -O0 -g -Icommon
 LDFLAGS := -shared
 
 # === Directory structure ===
-SRC_DIRS := installer loader common
+SRC_DIRS := installer loader builder common
 OBJ_DIR  := obj
 BIN_DIR  := bin
 
@@ -16,6 +16,9 @@ INSTALLER_CPPSOURCES := $(wildcard installer/*.cpp)
 
 LOADER_CSOURCES := $(wildcard loader/*.c)
 LOADER_CPPSOURCES := $(wildcard loader/*.cpp)
+
+BUILDER_CSOURCES := $(wildcard builder/*.c)
+BUILDER_CPPSOURCES := $(wildcard builder/*.cpp)
 
 COMMON_CSOURCES := $(wildcard common/*.c)
 COMMON_CPPSOURCES := $(wildcard common/*.cpp)
@@ -32,13 +35,18 @@ LOADER_OBJS := $(patsubst %.c,$(OBJ_DIR)/%.o,$(LOADER_CSOURCES)) \
 			   $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(LOADER_CPPSOURCES)) \
 			   $(COMMON_OBJS)
 
+BUILDER_OBJS := $(patsubst %.c,$(OBJ_DIR)/%.o,$(LOADER_CSOURCES)) \
+			   $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(LOADER_CPPSOURCES)) \
+			   $(COMMON_OBJS)
+
 # === Output files ===
 INSTALLER_DLL := $(BIN_DIR)/installer.dll
 LOADER_DLL    := $(BIN_DIR)/loader.dll
+BUILDER_EXE    := $(BIN_DIR)/builder.exe
 # TODO: INSTALLER_EXE
 
 # === Default target builds both DLLs ===
-all: $(INSTALLER_DLL) $(LOADER_DLL)
+all: $(INSTALLER_DLL) $(LOADER_DLL) $(BUILDER_EXE)
 
 # === Build installer.dll ===
 $(INSTALLER_DLL): $(INSTALLER_OBJS)
@@ -49,6 +57,11 @@ $(INSTALLER_DLL): $(INSTALLER_OBJS)
 $(LOADER_DLL): $(LOADER_OBJS)
 	@mkdir -p $(BIN_DIR)
 	$(CXX) $(LDFLAGS) $^ -o $@
+
+# === Build builder.exe ===
+$(BUILDER_EXE): $(BUILDER_OBJS)
+	@mkdir -p $(BIN_DIR)
+	$(CXX) $^ -o $@
 
 # === Compile rules (handles subdirectories automatically) ===
 $(OBJ_DIR)/%.o: %.c
