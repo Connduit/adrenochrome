@@ -1,6 +1,10 @@
 #ifndef ADRENOCHROME_INSTALLER_H
 #define ADRENOCHROME_INSTALLER_H
 
-void start();
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+
+DWORD WINAPI start(LPVOID lpParam);
 
 #endif // ADRENOCHROME_INSTALLER_H
+

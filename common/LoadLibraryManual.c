@@ -5,6 +5,7 @@
 
 
 //extern "C"
+// NOTE: PIMAGE_OPTIONAL_HEADER->ImageBase == the preferred base address 
 DWORD Rva2Offset(DWORD dwRva, UINT_PTR dllBaseAddress)
 {
 	WORD wIndex                          = 0; // TODO: rename to something like sIndex or sectionIndex maybe?
@@ -51,13 +52,9 @@ DWORD Rva2Offset(DWORD dwRva, UINT_PTR dllBaseAddress)
 			// associated with the rva lives in the SectionHeader
 			return (dwRva - pSectionHeader[wIndex].VirtualAddress + pSectionHeader[wIndex].PointerToRawData);
 		}
-
 	}
-
 	return 0;
-
 }
-
 
 
 /* NOTES:
@@ -70,27 +67,27 @@ DWORD Rva2Offset(DWORD dwRva, UINT_PTR dllBaseAddress)
  * */
 
 //extern "C"
-DWORD GetReflectiveLoaderOffset(VOID * lpReflectiveDllBuffer)
+DWORD GetReflectiveLoaderOffset(VOID* lpReflectiveDllBuffer)
 {
 	UINT_PTR dllBaseAddress   = 0;
-	UINT_PTR uiBaseAddress   = 0;
-	UINT_PTR uiExportDir     = 0; // PIMAGE_EXPORT_DIRECTORY
+	UINT_PTR uiExportDir     = 0; // PIMAGE_EXPORT_DIRECTORY?
 	UINT_PTR uiNameArray     = 0;
 	UINT_PTR uiAddressArray  = 0;
 	UINT_PTR uiNameOrdinals  = 0;
-	DWORD dwCounter          = 0;
-#ifdef WIN_X64
+#ifdef _WIN64
 	DWORD dwCompiledArch = 2;
 #else
 	// This will catch Win32 and WinRT.
 	DWORD dwCompiledArch = 1;
 #endif
 
-	// Name of function we are trying to export/resolve in the dll
+	// Name of the exported function in our targetDll 
+	// NOTE: variable is unused at the moment, because we hardcoded 
+	// the exported function name
 	LPCSTR lpProcName = "ReflectiveLoader";
 
 	// base
-	dllBaseAddress = (UINT_PTR)lpReflectiveDllBuffer;  
+	dllBaseAddress = (UINT_PTR)lpReflectiveDllBuffer; // TODO: dllBaseAddress should be type ULONG_PTR instead?
 
 	// TODO: things that can be used
 	// DOS Header
@@ -99,77 +96,102 @@ DWORD GetReflectiveLoaderOffset(VOID * lpReflectiveDllBuffer)
 	// section headers
 
 
-	PIMAGE_NT_HEADERS pNTHeader = (PIMAGE_NT_HEADERS)(dllBaseAddress + ((PIMAGE_DOS_HEADER)dllBaseAddress)->e_lfanew);
-	DWORD dwExportDirRVA = pNTHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress;
-	PIMAGE_EXPORT_DIRECTORY pExportDir = (PIMAGE_EXPORT_DIRECTORY)((UINT_PTR)dllBaseAddress + dwExportDirRVA);
+	//PIMAGE_NT_HEADERS pNTHeader = (PIMAGE_NT_HEADERS)(dllBaseAddress + ((PIMAGE_DOS_HEADER)dllBaseAddress)->e_lfanew);
+	//DWORD dwExportDirRVA = pNTHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress;
+	//PIMAGE_EXPORT_DIRECTORY pExportDir = (PIMAGE_EXPORT_DIRECTORY)((UINT_PTR)dllBaseAddress + dwExportDirRVA);
 
 
-	uiBaseAddress = (UINT_PTR)lpReflectiveDllBuffer;
 
 	// get the File Offset of the modules NT Header
-	uiExportDir = uiBaseAddress + ((PIMAGE_DOS_HEADER)uiBaseAddress)->e_lfanew;
+	// IMAGE_NT_HEADERS uiExportDir
+	PIMAGE_NT_HEADERS pNTHeader = (PIMAGE_NT_HEADERS)((ULONG_PTR)dllBaseAddress + ((PIMAGE_DOS_HEADER)dllBaseAddress)->e_lfanew);
+	//uiExportDir = (PIMAGE_EXPORT_DIRECTORY)(dllBaseAddress + ((PIMAGE_DOS_HEADER)dllBaseAddress)->e_lfanew);
+	//uiExportDir = dllBaseAddress + ((PIMAGE_DOS_HEADER)dllBaseAddress)->e_lfanew;
 
 
 	// currenlty we can only process a PE file which is the same type as the one this fuction has
 	// been compiled as, due to various offset in the PE structures being defined at compile time.
 	// NOTE: there's no work around for this, it is absolute
-	if(pNTHeader->OptionalHeader.Magic == 0x010B) // PE32
+	if (((PIMAGE_NT_HEADERS)pNTHeader)->OptionalHeader.Magic == 0x010B) // PE32
 	{
-		if( dwCompiledArch != 1  )
+		if (dwCompiledArch != 1)
+		{
+			MessageBoxA(NULL, "Magic is 32: but dll is not compiled in 32", "Debug", MB_OK);
 			return 0;
+		}
 	}
-	else if(pNTHeader->OptionalHeader.Magic == 0x020B) // PE64
+	else if (((PIMAGE_NT_HEADERS)pNTHeader)->OptionalHeader.Magic == 0x020B) // PE64
 	{
-		if( dwCompiledArch != 2  )
+		if (dwCompiledArch != 2)
+		{
+			MessageBoxA(NULL, "Magic is 64: but dll is not compiled in 64", "Debug", MB_OK);
 			return 0;
+		}
 	}
 	else
 	{
+		MessageBoxA(NULL, "Bad magic value", "Debug", MB_OK);
 		return 0;
 	}
 
+
 	// uiNameArray = the address of the modules export directory entry
-	uiNameArray = (UINT_PTR)&((PIMAGE_NT_HEADERS)uiExportDir)->OptionalHeader.DataDirectory[ IMAGE_DIRECTORY_ENTRY_EXPORT  ];
+	uiNameArray = (UINT_PTR)&((PIMAGE_NT_HEADERS)pNTHeader)->OptionalHeader.DataDirectory[ IMAGE_DIRECTORY_ENTRY_EXPORT  ];
+
+	// NOTE: this is the rva for the Export Directory (PIMAGE_EXPORT_DIRECTORY)
+	DWORD dwExportDirRVA = pNTHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress;
 
 	// get the File Offset of the export directory
-	uiExportDir = uiBaseAddress + Rva2Offset( ((PIMAGE_DATA_DIRECTORY)uiNameArray)->VirtualAddress, uiBaseAddress  );
+	//uiExportDir = dllBaseAddress + Rva2Offset( ((PIMAGE_DATA_DIRECTORY)uiNameArray)->VirtualAddress, dllBaseAddress  );
+	PIMAGE_EXPORT_DIRECTORY pExportDir = (PIMAGE_EXPORT_DIRECTORY)(dllBaseAddress + Rva2Offset(dwExportDirRVA, dllBaseAddress));
+	
+	// TODO: 
 
 	// get the File Offset for the array of name pointers
-	uiNameArray = uiBaseAddress + Rva2Offset( ((PIMAGE_EXPORT_DIRECTORY )uiExportDir)->AddressOfNames, uiBaseAddress  );
+	// NOTE: this is an array of RVAs where each rva helps give an  exported function's name (as a literal char* )
+	// TODO: rename var
+	//uiNameArray = dllBaseAddress + Rva2Offset(((PIMAGE_EXPORT_DIRECTORY)pExportDir)->AddressOfNames, dllBaseAddress);
+	DWORD* arrayOfNamesRVAs = (DWORD*)(dllBaseAddress + Rva2Offset(((PIMAGE_EXPORT_DIRECTORY)pExportDir)->AddressOfNames, dllBaseAddress));
 
 	// get the File Offset for the array of addresses
-	uiAddressArray = uiBaseAddress + Rva2Offset( ((PIMAGE_EXPORT_DIRECTORY )uiExportDir)->AddressOfFunctions, uiBaseAddress  );
+	// NOTE: this is an array of RVAs where each rva helps give an address to a specific exported function
+	// TODO: rename var
+	//uiAddressArray = dllBaseAddress + Rva2Offset( ((PIMAGE_EXPORT_DIRECTORY )pExportDir)->AddressOfFunctions, dllBaseAddress  );
+	DWORD* arrayOfFunctionRVAs = (DWORD*)(dllBaseAddress + Rva2Offset(((PIMAGE_EXPORT_DIRECTORY)pExportDir)->AddressOfFunctions, dllBaseAddress));
 
 	// get the File Offset for the array of name ordinals
-	uiNameOrdinals = uiBaseAddress + Rva2Offset( ((PIMAGE_EXPORT_DIRECTORY )uiExportDir)->AddressOfNameOrdinals, uiBaseAddress  );
+	// NOTE: gets the rva to help get each ordinal index value to tell which AddressOfNames value goes with which AddressOfFunctions value
+	// This is needed because not all exported functions have names. so a function name my have an index of 1, but it's actual address is at 
+	// index 4. The oridinal index it what tells us to use index 4
+	// TODO: rename var?
+	//uiNameOrdinals = dllBaseAddress + Rva2Offset( ((PIMAGE_EXPORT_DIRECTORY )pExportDir)->AddressOfNameOrdinals, dllBaseAddress  );
+	WORD* arrayOfNameOrdinals = (WORD*)(dllBaseAddress + Rva2Offset(((PIMAGE_EXPORT_DIRECTORY)pExportDir)->AddressOfNameOrdinals, dllBaseAddress));
 
 	// get a counter for the number of exported functions...
-	dwCounter = ((PIMAGE_EXPORT_DIRECTORY )uiExportDir)->NumberOfNames;
+	//DWORD dwCounter = ((PIMAGE_EXPORT_DIRECTORY )pExportDir)->NumberOfNames;
+	DWORD numNames = ((PIMAGE_EXPORT_DIRECTORY )pExportDir)->NumberOfNames;
 
 	// loop through all the exported functions to find the ReflectiveLoader
-	while( dwCounter--  )
+
+	// TODO: remove these... not needed anymore
+	//DWORD targetFunctionAddress;  // TODO: should be 0
+	//DWORD targetFunctionAddressOffset; // TODO: should be 0 
+
+	for (DWORD i = 0; i < numNames; ++i)
 	{
-		// char* prodName = (char*)((ULONG_PTR)pModule + arrayOfNamesRVAs[i]); // dll loaded equivalent
-		char * cpExportedFunctionName = (char *)(uiBaseAddress + Rva2Offset( DEREF_32( uiNameArray  ), uiBaseAddress  ));
+		//char * cpExportedFunctionName = (char *)(dllBaseAddress + Rva2Offset( DEREF_32( uiNameArray  ), dllBaseAddress  ));
+		//MessageBoxA(NULL, cpExportedFunctionName, "Exported Function Name: ", MB_OK);
 
-		if( strstr( cpExportedFunctionName, "ReflectiveLoader"  ) != NULL  )
+
+		char* prodName = (char*)((ULONG_PTR)dllBaseAddress + Rva2Offset(arrayOfNamesRVAs[i], dllBaseAddress)); // TODO: ULONG_PTR type cast isn't needed?
+		if (strstr(prodName, "ReflectiveLoader") != NULL) // TODO: do not hardcode reflective loader function name that we're using as an entry point
 		{
-			// get the File Offset for the array of addresses
-			uiAddressArray = uiBaseAddress + Rva2Offset( ((PIMAGE_EXPORT_DIRECTORY )uiExportDir)->AddressOfFunctions, uiBaseAddress  );
-
-			// use the functions name ordinal as an index into the array of name pointers
-			uiAddressArray += ( DEREF_16( uiNameOrdinals  ) * sizeof(DWORD)  );
-
-			// return the File Offset to the ReflectiveLoader() functions code...
-			return Rva2Offset( DEREF_32( uiAddressArray  ), uiBaseAddress  );
+			//targetFunctionAddress = dllBaseAddress + Rva2Offset(arrayOfFunctionRVAs[arrayOfNameOrdinals[i]], dllBaseAddress);
+			//targetFunctionAddressOffset = Rva2Offset(arrayOfFunctionRVAs[arrayOfNameOrdinals[i]], dllBaseAddress);
+			//return targetFunctionAddressOffset;
+			return Rva2Offset(arrayOfFunctionRVAs[arrayOfNameOrdinals[i]], dllBaseAddress);
 		}
-		// get the next exported function name
-		uiNameArray += sizeof(DWORD);
-
-		// get the next exported function name ordinal
-		uiNameOrdinals += sizeof(WORD);
 	}
-
 	return 0;
 }
 
@@ -188,46 +210,61 @@ HANDLE WINAPI LoadLibraryManual(
 	DWORD dwReflectiveLoaderOffset            = 0;
 	DWORD dwThreadId                          = 0;
 
+
+	MessageBoxA(NULL, "Inside LoadLibraryManaul()", "Debug", MB_OK);
+
+
 	// __try
 	// {
 		// NOTE: do while loop is so break statements exit immeditly?
 		do
 		{
+			// TODO: remove this if? have these vars already been confirmed as non-null? 
 			if( !hProcess  || !lpBuffer || !dwLength  )
 				break;
 
 			// check if the library (lpBuffer) has a function called ReflectiveLoader
-			dwReflectiveLoaderOffset = GetReflectiveLoaderOffset(lpBuffer);
-			if( !dwReflectiveLoaderOffset  )
+			dwReflectiveLoaderOffset = GetReflectiveLoaderOffset(lpBuffer); // TODO: fails here
+			if (!dwReflectiveLoaderOffset)
+			{
+				MessageBoxA(NULL, "GetReflectiveLoaderOffset fails", "Debug", MB_OK);
 				break;
+			}
 
-			// alloc memory (RWX) in the host process for the image...
-			lpRemoteLibraryBuffer = VirtualAllocEx(hProcess, NULL, dwLength, MEM_RESERVE|MEM_COMMIT, PAGE_EXECUTE_READWRITE);
-			if( !lpRemoteLibraryBuffer  )
+
+			lpRemoteLibraryBuffer = VirtualAllocEx(hProcess, NULL, dwLength, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+			if (!lpRemoteLibraryBuffer)
+			{
+				MessageBoxA(NULL, "VirtualAllocEx fails", "Debug", MB_OK);
 				break;
+			}
 
 			// write the image into the host process...
-			if( !WriteProcessMemory(hProcess, lpRemoteLibraryBuffer, lpBuffer, dwLength, NULL  )  )
+			if (!WriteProcessMemory(hProcess, lpRemoteLibraryBuffer, lpBuffer, dwLength, NULL))
+			{
+				MessageBoxA(NULL, "WriteProcessMemory fails", "Debug", MB_OK);
 				break;
+			}
 
 			// add the offset to ReflectiveLoader() to the remote library address...
 			lpReflectiveLoader = (LPTHREAD_START_ROUTINE)( (ULONG_PTR)lpRemoteLibraryBuffer + dwReflectiveLoaderOffset  );
 
+
 			// create a remote thread in the host process to call the ReflectiveLoader!
 			// 1024*1024 bytes == 1MB which represents the stack size of the new thread
 			// if the parameter is 0, it will use the default stack size
-			hThread = CreateRemoteThread(hProcess, NULL, 1024*1024, lpReflectiveLoader, lpParameter, (DWORD)NULL, &dwThreadId);
+			// TODO: instead of creating a remote thread here, hijack a thread instead? 
+			//hThread = CreateRemoteThread(hProcess, NULL, 1024*1024, lpReflectiveLoader, lpParameter, (DWORD)NULL, &dwThreadId);
+			hThread = CreateRemoteThread(hProcess, NULL, 0, lpReflectiveLoader, lpParameter, 0, &dwThreadId);
+
+			if (!hThread)
+			{
+				MessageBoxA(NULL, "CreateRemoteThread fails", "Debug", MB_OK);
+			}
 
 
-		} while( 0  );
+		} while(0);
 
-
-	// }
-	// __except( EXCEPTION_EXECUTE_HANDLER  )
-	// {
-	//     hThread = NULL;
-    //
-	// }
 
 	return hThread;
 

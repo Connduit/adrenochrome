@@ -1,13 +1,20 @@
-/* Loader.h */
+// TODO: 
+// this should be the "custom" loader
+
 
 #ifndef ADRENOCHROME_LOADER_H
 #define ADRENOCHROME_LOADER_H
 
-#include "ReflectiveLoader.h"
 
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
+// engine.dll is embedded in a PE section of loader.dll
+void loadFromSection();
 
-DLLEXPORT ULONG_PTR WINAPI ReflectiveLoader(LPVOID param);
+// engine.dll is encrypted/compressed on the disk (as a .bin/.data file?)
+void loadFromDisk();
+
+void ManualMapDLL();
+void ManualMapAXE();
+void ManualMapPIC();
+
 
 #endif

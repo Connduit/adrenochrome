@@ -1,8 +1,7 @@
-/* ReflectiveLoader.h */
-// TODO: defined all the structs/types needed 
 
-#ifndef REFLECTIVE_LOADER_H
-#define REFLECTIVE_LOADER_H
+#ifndef ADRENOCHROME_PE_STRUCTS_H // TODO: rename to ADRENCHROME_REFLECTIVE_LOADER_H ? 
+#define ADRENOCHROME_PE_STRUCTS_H
+
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h> // TODO: eventually remove
@@ -14,7 +13,6 @@ typedef struct _UNICODE_STRING
     PWSTR Buffer;
 } UNICODE_STRING;
 typedef UNICODE_STRING *PUNICODE_STRING;
-
 
 typedef struct _LDR_DATA_TABLE_ENTRY {
     LIST_ENTRY InLoadOrderLinks; // PVOID Reserved1[2];
@@ -86,12 +84,11 @@ typedef struct _PEB {
     ULONG SessionId;
 } PEB;
 */
-//
-// #define DEREF( name  )*(UINT_PTR *)(name)
-// #define DEREF_64( name  )*(DWORD64 *)(name)
-// #define DEREF_32( name  )*(DWORD *)(name)
-// #define DEREF_16( name  )*(WORD *)(name)
-// #define DEREF_8( name  )*(BYTE *)(name)
-#define DLLEXPORT __declspec(dllexport)
+
+typedef struct
+{
+    WORD	offset : 12; // lower 12 bits
+    WORD	type : 4; // upper 4 bits
+} IMAGE_RELOC, *PIMAGE_RELOC;
 
 #endif
