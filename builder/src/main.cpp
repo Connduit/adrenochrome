@@ -10,7 +10,13 @@ int main(int argc, char* argv[])
 	}
 	else if (argc == 2)
 	{
-		AdrenochromeBuilder::loadFile(argv[1]);
+		AdrenochromeBuilder builder;
+		// NOTE: just assume all argv values will be in ascii... TODO: don't assume this 
+		std::string s = argv[1];
+		std::wstring ws(s.begin(), s.end());
+		const wchar_t *path = ws.c_str();
+		builder.loadFile(path);
+		//AdrenochromeBuilder::loadFile(argv[1]);
 	}
 
 }

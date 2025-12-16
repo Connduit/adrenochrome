@@ -50,6 +50,8 @@ Based off of Athena: https://wikileaks.org/vault7/#Athena
 - in order to create a loader/manual_mapper (that lives in host.dll) that can load special files like .axe, we need to create a custom loader similar to https://github.com/monoxgas/sRDI/tree/master/ShellcodeRDI. But instead of assuming and using the meta data associated with a dll, we would need to embedd meta data associated with an .axe file.
 - create a .axe file "builder" that takes in a dll, reads/parses the dll, and converts it into a .axe by rewriting the contents of the pe file into a custom .axe file struct. basically all the windows structs normally used will have to be rewritten in a .axe struct format
     - think of pe files as a way to encode binary/raw data. we're simply rewriting our own encoding method
+- add "function hooking"? 
+    - if we know av and static analysis use certian functions, try to prevent them from easily being able to use them
 
 ### Helpful
 - https://github.com/rapid7/metasploit-framework/blob/master/docs/metasploit-framework.wiki/Using-ReflectiveDLL-Injection.md

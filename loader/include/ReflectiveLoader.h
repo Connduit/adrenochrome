@@ -30,7 +30,7 @@ typedef DWORD (NTAPI* NTFLUSHINSTRUCTIONCACHE)
 // TODO: CONTEXTS
 typedef struct // TODO: needs a constructor to zero everything out?
 {
-	ULONG_PTR rawImageBase;
+	ULONG_PTR rawImageBase; // TODO: rename to rawImageAddress
 	ULONG_PTR baseAddress;
 	PIMAGE_NT_HEADERS pNtHeaders;
 	LOADLIBRARYA pLoadLibraryA;

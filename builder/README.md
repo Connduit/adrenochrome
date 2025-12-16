@@ -1,5 +1,8 @@
 # Builder
 
+### TODO
+- use https://github.com/DarthTon/Blackbone/tree/master instead of rewriting everything? maybe eventually ill do this? for now rewriting it myself might be better just so i learn more
+
 ### Features
 - helps create specific builds based on target dll, target os, host process, and more
 - converts dll into "axe" file

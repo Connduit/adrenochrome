@@ -1,5 +1,13 @@
 #include "Loader.h"
 
+void loadAXE()
+{}
+
+void loadDLL()
+{}
+
+void loadPIC()
+{}
 
 void ManualMapDLL()
 {}
