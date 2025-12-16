@@ -54,8 +54,8 @@ int main(int argc, char* argv[])
 	cpDllFile = "C:\\Users\\Connor\\Documents\\Code\\C++\\adrenochrome\\x64\\Debug\\loader.dll"; // host.dll
 #elif NDEBUG
 	// TODO: 
-	//cpDllFile = "C:\\Users\\Connor\\Documents\\Code\\C++\\adrenochrome\\x64\\Release\\loader.dll"; // host.dll
-	cpDllFile = "C:\\Users\\Conno\\Desktop\\files\\loader.dll";
+	cpDllFile = "C:\\Users\\Connor\\Documents\\Code\\C++\\adrenochrome\\x64\\Release\\loader.dll"; // host.dll
+	//cpDllFile = "C:\\Users\\Conno\\Desktop\\files\\loader.dll";
 #endif
 #elif defined(_M_ARM64)
 	cpDllFile = "loader.dll";

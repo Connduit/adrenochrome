@@ -5,7 +5,6 @@
 #define ADRENOCHROME_REFLECTIVE_LOADER_H
 
 
-#include <minwindef.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
@@ -38,7 +37,6 @@ typedef struct // TODO: needs a constructor to zero everything out?
 	GETPROCADDRESS pGetProcAddress;
 	VIRTUALALLOC pVirtualAlloc;
     NTFLUSHINSTRUCTIONCACHE pNtFlushInstructionCache;
-	//PVOID pNtdllBase; // TODO: 
 } LOADER_CONTEXT, *PLOADER_CONTEXT;
 
 //DLLEXPORT ULONG_PTR WINAPI ReflectiveLoader(LPVOID lpReserved);
@@ -55,7 +53,8 @@ BOOL applyRelocations(PLOADER_CONTEXT ctx);
 BOOL resolveImports(PLOADER_CONTEXT ctx);
 // void handleTLS(void); // void handleTLSCallbacks(void); TODO
 // void setProtections(void); // TODO: rename to protectImageMemory ?
-BOOL callEntryPoint(PLOADER_CONTEXT ctx);
+//BOOL callEntryPoint(PLOADER_CONTEXT ctx);
+ULONG_PTR callEntryPoint(PLOADER_CONTEXT ctx);
 ////////////////////////////////////////
 // getImports();
 // getExports();

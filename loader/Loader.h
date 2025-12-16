@@ -5,15 +5,16 @@
 #ifndef ADRENOCHROME_LOADER_H
 #define ADRENOCHROME_LOADER_H
 
-void ManualMapDLL();
-void ManualMapAXE();
-void ManualMapPIC();
 
 // engine.dll is embedded in a PE section of loader.dll
 void loadFromSection();
 
 // engine.dll is encrypted/compressed on the disk (as a .bin/.data file?)
 void loadFromDisk();
+
+void ManualMapDLL();
+void ManualMapAXE();
+void ManualMapPIC();
 
 
 #endif

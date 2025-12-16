@@ -70,8 +70,8 @@ DWORD WINAPI start(LPVOID lpParam)
 	// TODO: change to relative path
 	char* targetDll = "C:\\Users\\Connor\\Documents\\Code\\C++\\adrenochrome\\x64\\Debug\\loader.dll"; // host.dll
 #elif NDEBUG
-	//char* targetDll = "C:\\Users\\Connor\\Documents\\Code\\C++\\adrenochrome\\x64\\Release\\loader.dll"; // host.dll
-	char* targetDll = "C:\\Users\\Conno\\Desktop\\files\\loader.dll";
+	char* targetDll = "C:\\Users\\Connor\\Documents\\Code\\C++\\adrenochrome\\x64\\Release\\loader.dll"; // host.dll
+	//char* targetDll = "C:\\Users\\Conno\\Desktop\\files\\loader.dll";
 #else
 	// Linux
 	char* targetDll = "bin/loader.dll";
