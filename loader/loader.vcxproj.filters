@@ -15,58 +15,55 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\loader\Loader.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\common\LoadLibraryManual.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\loader\LoaderDll.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\common\GetModuleHandleManual.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\common\GetProcAddressManual.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\loader\ReflectiveLoader.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\loader\Loader.h">
+    <ClInclude Include="include\Loader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\common\LoadLibraryManual.h">
+    <ClInclude Include="include\LoaderDll.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\common\GetModuleHandleManual.h">
+    <ClInclude Include="include\LoaderHashes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\common\GetProcAddressManual.h">
+    <ClInclude Include="include\ReflectiveLoader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\common\PEStructs.h">
+    <ClInclude Include="..\common\include\GetModuleHandleManual.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\common\StatusCodes.h">
+    <ClInclude Include="..\common\include\GetProcAddressManual.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\common\Utils.h">
+    <ClInclude Include="..\common\include\LoadLibraryManual.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\loader\LoaderDll.h">
+    <ClInclude Include="..\common\include\PEStructs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\loader\LoaderHashes.h">
+    <ClInclude Include="..\common\include\StatusCodes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\loader\ReflectiveLoader.h">
+    <ClInclude Include="..\common\include\Utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\loader\README.md" />
+    <ClCompile Include="src\Loader.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\LoaderDll.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ReflectiveLoader.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\src\GetModuleHandleManual.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\src\GetProcAddressManual.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\src\LoadLibraryManual.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
