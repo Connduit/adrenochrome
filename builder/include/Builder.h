@@ -53,6 +53,7 @@ private:
 	void pack(); // pack struct into raw bytes (serializer function)
 
 	// TODO: rename function?
+	bool createAXE(std::string path);
 	bool createAXE(std::string path, std::vector<uint8_t>& buffer); // TODO: typedef vector<uint8_t>
 
 	ULONG_PTR rawImageBase_; // TODO: rename to 
@@ -61,7 +62,10 @@ private:
 	PAXE_CONTEXT ctx_;
 
 	//std::string inputFilename;
-	std::string outputFilename;
+	std::string outputFilename_;
+
+	std::vector<uint8_t> outBuffer_;
+
 
 };
 

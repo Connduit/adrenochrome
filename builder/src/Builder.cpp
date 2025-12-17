@@ -146,7 +146,8 @@ void AdrenochromeBuilder::populateContext()
 		}
 	}
 
-	ctx_->pAxeSections = axeSections;
+	// TODO: 
+	// ctx_->axeSection = axeSections;
 
 	/*
 	// TODO: relocs
