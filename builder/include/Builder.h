@@ -51,12 +51,19 @@ public:
 private:
 	void populateContext();
 	//void createContextInMemory(); // TODO: ??? virtuallloc is done here?
+
+	void writeToStream(AXE_HEADER header); // update header 
+	void writeToStream(AXE_SECTION section); // update section
+	void writeToStream(std::vector<AXE_SECTION> sections); // update sections
+	// void writeToStream( TODO ); // update/write section contents
+
+
 	void encrypt();
 	void compress();
 	void pack(); // pack struct into raw bytes (serializer function)
 
 	// TODO: rename function?
-	bool createAXE(std::string path="./");
+	bool createAXE(std::string path="./loader.axe");
 	bool createAXE(std::string path, std::vector<uint8_t>& buffer); // TODO: typedef vector<uint8_t>
 
 	ULONG_PTR rawImageBase_; // TODO: rename to 
@@ -71,9 +78,24 @@ private:
 
 	std::vector<uint8_t> outBuffer_;
 
+
+	// TODO: add offsets to start of headers, sections, data, etc... to this class 
+	// so i don't have to store them inside the AXE_STRUCTS
+
+
+	// std::vector<AXE_SECTION> axeSections_; // TODO: maybe add this? 
+
 	// const fileAlignment = 0x200
 	// const sectionAlignment = 0x1000 (not needed for builder... just remeber that this is what windows will use)
 
+	// TODO: add some config struct that keeps track of the following (or maybe just add it to argv parameters
+	// but could still use a config file? just had argv parameters populate the config file if params are provided,
+	// otherwise use default config):
+	// - names of the sections we want to keep
+	// - output path and name of output file ()
+	// - type of encryption, compression, and hashing
+	// - choose what information we want to keep/strip from originally pe
+	// BUILD_CONFIG config_;
 
 };
 

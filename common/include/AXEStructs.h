@@ -56,6 +56,7 @@ typedef struct _AXE_RELOCATION
     DWORD type;          // e.g., 32-bit or 64-bit relocation
 } AXE_RELOCATION, *PAXE_RELOCATION;
 
+// TODO: maybe turn this into just an "in-memory" version? 
 typedef struct _AXE_CONTEXT {
     AXE_HEADER axeHeader;
     AXE_SECTION axeSection;
