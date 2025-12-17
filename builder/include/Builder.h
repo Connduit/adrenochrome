@@ -10,6 +10,9 @@
 #include <string>
 #include <vector>
 
+#include <fstream>
+#include <iostream>
+
 /*
 TODO: remove: 
 - dos header and stub (IMAGE_DOS_HEADER)
@@ -53,7 +56,7 @@ private:
 	void pack(); // pack struct into raw bytes (serializer function)
 
 	// TODO: rename function?
-	bool createAXE(std::string path);
+	bool createAXE(std::string path="./");
 	bool createAXE(std::string path, std::vector<uint8_t>& buffer); // TODO: typedef vector<uint8_t>
 
 	ULONG_PTR rawImageBase_; // TODO: rename to 
@@ -61,10 +64,15 @@ private:
 	//ULONG_PTR currentAddress_; // NOTE: the current address ("location") we're writing to (within the baseaddress)
 	PAXE_CONTEXT ctx_;
 
+	std::ofstream outfileStream_;
+
 	//std::string inputFilename;
 	std::string outputFilename_;
 
 	std::vector<uint8_t> outBuffer_;
+
+	// const fileAlignment = 0x200
+	// const sectionAlignment = 0x1000 (not needed for builder... just remeber that this is what windows will use)
 
 
 };

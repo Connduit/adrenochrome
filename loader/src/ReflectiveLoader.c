@@ -166,12 +166,12 @@ BOOL copyImageIntoMemory(PLOADER_CONTEXT ctx)
 
 	// copy over dos header, dos stub, and pe header into baseAddress?
 	
-	DWORD sizeOfHeaders = ((PIMAGE_NT_HEADERS)ctx->pNtHeaders)->OptionalHeader.SizeOfHeaders;
+	DWORD SizeOfHeaders = ((PIMAGE_NT_HEADERS)ctx->pNtHeaders)->OptionalHeader.SizeOfHeaders;
 	PBYTE srcPtr = (PBYTE)ctx->rawImageBase;
 	PBYTE dstPtr = (PBYTE)ctx->baseAddress;
 
 	// Copy the headers into our newly allocated memory
-	while(sizeOfHeaders--)
+	while (SizeOfHeaders--)
 	{
 		*dstPtr++ = *srcPtr++;
 	}
@@ -200,10 +200,10 @@ BOOL copyImageIntoMemory(PLOADER_CONTEXT ctx)
 
 		// copy the section over
 		// NOTE: how many bytes we need to copy over (this is the section's size)
-		DWORD sizeofRawData = pSectionHeader->SizeOfRawData;
+		DWORD SizeOfRawData = pSectionHeader->SizeOfRawData;
 
 		// Copy the contents of the current section
-		while (sizeofRawData--)
+		while (SizeOfRawData--)
 		{
 			*dstPtr++ = *srcPtr++;
 		}
@@ -342,7 +342,7 @@ BOOL resolveImports(PLOADER_CONTEXT ctx)
 		PIMAGE_THUNK_DATA originalThunk = (PIMAGE_THUNK_DATA)(ctx->baseAddress + ((PIMAGE_IMPORT_DESCRIPTOR)importDesc)->OriginalFirstThunk);
 
 		// uiValueA = VA of the IAT (via first thunk not origionalfirstthunk)
-		PIMAGE_THUNK_DATA iatAddress = ctx->baseAddress + ((PIMAGE_IMPORT_DESCRIPTOR)importDesc)->FirstThunk;
+		PIMAGE_THUNK_DATA iatAddress = (PIMAGE_THUNK_DATA)(ctx->baseAddress + ((PIMAGE_IMPORT_DESCRIPTOR)importDesc)->FirstThunk);
 
 		// itterate through all imported functions, importing by ordinal if no name present
 		for (; iatAddress->u1.AddressOfData; ++iatAddress, ++originalThunk) // TODO: how does this for loop know when to stop? 

@@ -5,6 +5,7 @@
 #ifndef ADRENOCHROME_LOADER_H
 #define ADRENOCHROME_LOADER_H
 
+int loadAXE();
 
 // engine.dll is embedded in a PE section of loader.dll
 void loadFromSection();

@@ -1,7 +1,7 @@
 #include "Loader.h"
 #include "AXEStructs.h"
 
-void loadAXE()
+int loadAXE()
 {
 	char* targetAxe = "/path/to/targetAxe";
 	HANDLE hFile = CreateFileA(targetAxe, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);

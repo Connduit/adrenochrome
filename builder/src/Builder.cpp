@@ -7,12 +7,10 @@
 #include <iostream>
 #include <string>
 
-
-
-AdrenochromeBuilder::AdrenochromeBuilder() :
-	rawImageBase_(0),
-	//baseAddress_(0),
-	ctx_(nullptr)
+AdrenochromeBuilder::AdrenochromeBuilder()
+	: rawImageBase_(0),
+	  // baseAddress_(0),
+	  ctx_(nullptr)
 {
 	// LOGGING STUFF?
 }
@@ -20,11 +18,13 @@ AdrenochromeBuilder::AdrenochromeBuilder() :
 void AdrenochromeBuilder::build()
 {
 	// TODO: main function
+	createAXE(); // check return type
+	populateContext(); // change function type from void so i can check return type
 }
 
-//void AdrenochromeBuilder::loadFile(std::string& path)
-//void AdrenochromeBuilder::loadFile(const std::wstring& path)
-// TODO: change return type?
+// void AdrenochromeBuilder::loadFile(std::string& path)
+// void AdrenochromeBuilder::loadFile(const std::wstring& path)
+//  TODO: change return type?
 void AdrenochromeBuilder::loadFile(LPCWSTR path)
 {
 	HANDLE hFile = CreateFileW(path, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -53,39 +53,101 @@ void AdrenochromeBuilder::loadFile(LPCWSTR path)
 	{
 		// TODO: throw helpful error
 	}
-
 }
 
-// TODO: do i even need a axe_struct? will def help with organizing and future proofing
-// but what if i just did a virtualalloc using the SizeOfImage and just wrote everything 
-// i want to keep into that buffer. And then kept track of how many bytes i wrote to that 
-// buffer. and then just wrote all the bytes from virtualalloc_baseAddress to 
-// virtualalloc_baseAddress + nBytes to some file on disk that would be my .axe file
+// TODO: do i even need a axe_struct? will def help with organizing and future
+// proofing but what if i just did a virtualalloc using the SizeOfImage and just
+// wrote everything i want to keep into that buffer. And then kept track of how
+// many bytes i wrote to that buffer. and then just wrote all the bytes from
+// virtualalloc_baseAddress to virtualalloc_baseAddress + nBytes to some file on
+// disk that would be my .axe file
 void AdrenochromeBuilder::populateContext()
 {
 	PIMAGE_NT_HEADERS pNtHeaders = (PIMAGE_NT_HEADERS)(rawImageBase_ + ((PIMAGE_DOS_HEADER)rawImageBase_)->e_lfanew);
-	// TODO: need to do sizeofimage - sizeofheaders? (if we plan on removing headers)
-	//ctx_->axeHeader.SizeOfImage = pNtHeaders->OptionalHeader.SizeOfImage;
-	// TODO: im pretty sure this will be wrong since im stripping a bunch of parts of the dll.
-	// the entry point will have to be manually calculated 
-	//ctx_->axeHeader.EntryPointRVA = pNtHeaders->OptionalHeader.AddressOfEntryPoint; // TODO: for should i just return absolute?
+	// TODO: need to do sizeofimage - sizeofheaders? (if we plan on removing
+	// headers)
+	// ctx_->axeHeader.SizeOfImage = pNtHeaders->OptionalHeader.SizeOfImage;
+	// TODO: im pretty sure this will be wrong since im stripping a bunch of parts
+	// of the dll. the entry point will have to be manually calculated
+	// ctx_->axeHeader.EntryPointRVA =
+	// pNtHeaders->OptionalHeader.AddressOfEntryPoint; // TODO: for should i just
+	// return absolute?
 
-	ctx_->axeHeader.Magic = 0xDEADBEEF;
-	ctx_->axeHeader.NumberOfSections = 3; // TODO: should start o
+	ctx_->axeHeader.Magic = 0xBEEF;
+	// ctx_->axeHeader.NumberOfSections = 3; // TODO: should start o
+	ctx_->axeHeader.NumberOfSections = 0;
 	ctx_->axeHeader.NumberOfRelocations = 0;
 	ctx_->axeHeader.NumberOfImports = 0;
 
-	// TODO: pNtHeaders->FileHeader ? 
-	// TODO: pNtHeaders->OptionalHeader ? 
+	// NOTE: assume outfileStream_ is not null
+	outfileStream_.write(reinterpret_cast<const char *>(&ctx_->axeHeader), sizeof(ctx_->axeHeader));
+	// outfileStream_.write(reinterpret_cast<const char*>(&(ctx_->axeHeader)),
+	// sizeof(ctx_->axeHeader));
 
+	AXE_SECTION text{};
+	memcpy(text.Name, ".text", 5);
+	text.memoryAddress = 0x1000; // starting addr? (this is an RVA?)
+	text.Offset = 0;			 // raw offset (we will fill this later)
+	text.Size = 0;				 // raw size (we will fill this later)
+
+	ctx_->axeHeader.NumberOfSections++;
+	// TODO: make a write function to handle moving the outfilestream ptr around
+	outfileStream_.seekp(0, std::ios::beg);															 // move outfilestream ptr to beginning on file
+	outfileStream_.write(reinterpret_cast<const char *>(&ctx_->axeHeader), sizeof(ctx_->axeHeader)); // overwrite with updated header
+
+	// outfileStream_.seekp(ctx_->axeHeader.SectionTableOffset, std::ios::beg); // TODO: uncomment if we end up adding a helpful offset
+	outfileStream_.write(reinterpret_cast<const char *>(&text), sizeof(text));
+
+	// uint32_t dataStart = SectionTableOffset + SectionCount * sizeof(AXE_SECTION)
+	uint32_t dataStart = sizeof(ctx_->axeHeader) + ctx_->axeHeader.NumberOfSections * sizeof(AXE_SECTION);
+	uint32_t cursor = dataStart;
+
+	WORD nSections = pNtHeaders->FileHeader.NumberOfSections;
+	PIMAGE_SECTION_HEADER pSectionHeader = IMAGE_FIRST_SECTION(pNtHeaders);
+	for (USHORT i = 0; i < nSections; ++i, ++pSectionHeader)
+	{
+		if (strncmp((char *)pSectionHeader->Name, ".text", 5) == 0)
+		{
+
+			PBYTE srcPtr = (PBYTE)(rawImageBase_ + pSectionHeader->PointerToRawData);
+			DWORD SizeOfRawData = pSectionHeader->SizeOfRawData;
+
+			outfileStream_.seekp(cursor, std::ios::beg);
+			outfileStream_.write(reinterpret_cast<const char *>(srcPtr), SizeOfRawData);
+			cursor += pSectionHeader->SizeOfRawData;
+		}
+	}
+	/*
+	// NOTE: this for loop is just gives helper info to be used later on
+	// cuz im pretty sure before this sec.RawOffset and sec.RawSize would be unknown
+	for (auto& sec : sections)
+	{
+		sec.RawOffset = cursor;
+		sec.RawSize   = secDataSize;   // actual byte count on disk
+		cursor += sec.RawSize;
+	}
+
+	// Update SectionHeaders
+	out.seekp(hdr.SectionTableOffset, std::ios::beg);
+	for (auto& sec : sections)
+	{
+		out.write( reinterpret_cast<const char*>(&sec), sizeof(sec));
+	}
+
+	out.seekp(sec.RawOffset, std::ios::beg);
+	out.write( reinterpret_cast<const char*>(sectionData), sec.RawSize);
+	*/
+
+	/*
 	//AXE_SECTION axeSections[ctx_->axeHeader.NumberOfSections];
 	AXE_SECTION axeSections[3];
 	// TODO: need to allocate this??
 	//std::vector<AXE_SECTION> axeSections;
 	//axeSections.reserve(ctx_->axeHeader.NumberOfSections);
 
-	// TODO: createContextInMemory() here? 
-	// ULONG_PTR baseAddress = (ULONG_PTR)VirtualAlloc(NULL, ctx_->axeHeader.SizeOfImage, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+	// TODO: createContextInMemory() here?
+	// ULONG_PTR baseAddress = (ULONG_PTR)VirtualAlloc(NULL,
+	ctx_->axeHeader.SizeOfImage, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 	//baseAddress_ = baseAddress;
 
 
@@ -93,82 +155,81 @@ void AdrenochromeBuilder::populateContext()
 	// TODO: for copying contents in each section
 	PIMAGE_SECTION_HEADER pSectionHeader = IMAGE_FIRST_SECTION(pNtHeaders);
 	// NOTE: pSectionHeader->PointerToRawData = pointer to data stored on disk
-	// pSectionHeader->VirtualAddress = the relative address of where the data goes relative to the baseAddress
-	for (WORD i = 0; i < nSections; ++i)
+	// pSectionHeader->VirtualAddress = the relative address of where the data
+	goes relative to the baseAddress for (WORD i = 0; i < nSections; ++i)
 	{
-		DWORD SizeOfRawData = pSectionHeader->SizeOfRawData;
-		if (strncmp((char*)pSectionHeader->Name, ".text", 5) == 0)
-		{
-			axeSections[i].Offset = pSectionHeader->PointerToRawData;
-			axeSections[i].Size = pSectionHeader->SizeOfRawData;
-			//axeSections[i].flags = pSectionHeader->Characteristics;  // optional
-			axeSections[i].memoryAddress = NULL;          // your loader will set this
-
-			/*
-			while (SizeOfRawData--)
+			DWORD SizeOfRawData = pSectionHeader->SizeOfRawData;
+			if (strncmp((char*)pSectionHeader->Name, ".text", 5) == 0)
 			{
-				// TODO: 
-				// *dstPtr++ = *srcPtr++;
-			}
-			*/
-		}
-		else if (strncmp((char*)pSectionHeader->Name, ".rdata", 6) == 0)
-		{
-			axeSections[i].Offset = pSectionHeader->PointerToRawData;
-			axeSections[i].Size = pSectionHeader->SizeOfRawData;
-			//axeSections[i].flags = pSectionHeader->Characteristics;  // optional
-			axeSections[i].memoryAddress = NULL;          // your loader will set this
+					axeSections[i].Offset = pSectionHeader->PointerToRawData;
+					axeSections[i].Size = pSectionHeader->SizeOfRawData;
+					//axeSections[i].flags = pSectionHeader->Characteristics;  //
+	optional axeSections[i].memoryAddress = NULL;          // your loader will set
+	this
 
-			/*
-			while (SizeOfRawData--)
+					// while (SizeOfRawData--)
+					// {
+					//     // TODO:
+					//     // *dstPtr++ = *srcPtr++;
+					// }
+			}
+			else if (strncmp((char*)pSectionHeader->Name, ".rdata", 6) == 0)
 			{
-				// TODO: 
-				// *dstPtr++ = *srcPtr++;
+					axeSections[i].Offset = pSectionHeader->PointerToRawData;
+					axeSections[i].Size = pSectionHeader->SizeOfRawData;
+					//axeSections[i].flags = pSectionHeader->Characteristics;  //
+	optional axeSections[i].memoryAddress = NULL;          // your loader will set
+	this
+
+					// while (SizeOfRawData--)
+					// {
+					//     // TODO:
+					//     // *dstPtr++ = *srcPtr++;
+					// }
+
 			}
-			*/
-
-		}
-		else if (strncmp((char*)pSectionHeader->Name, ".data", 5) == 0)
-		{
-			axeSections[i].Offset = pSectionHeader->PointerToRawData;
-			axeSections[i].Size = pSectionHeader->SizeOfRawData;
-			//axeSections[i].flags = pSectionHeader->Characteristics;  // optional
-			axeSections[i].memoryAddress = NULL;          // your loader will set this
-
-			/*
-			while (SizeOfRawData--)
+			else if (strncmp((char*)pSectionHeader->Name, ".data", 5) == 0)
 			{
-				// TODO: 
-				// *dstPtr++ = *srcPtr++;
-			}
-			*/
+					axeSections[i].Offset = pSectionHeader->PointerToRawData;
+					axeSections[i].Size = pSectionHeader->SizeOfRawData;
+					//axeSections[i].flags = pSectionHeader->Characteristics;  //
+	optional axeSections[i].memoryAddress = NULL;          // your loader will set
+	this
 
-		}
+					// while (SizeOfRawData--)
+					// {
+					//     // TODO:
+					//     // *dstPtr++ = *srcPtr++;
+					// }
+
+			}
 	}
+	*/
 
-	// TODO: 
+	// TODO:
 	// ctx_->axeSection = axeSections;
 
 	/*
 	// TODO: relocs
-	for (IMAGE_BASE_RELOCATION* relBlock = firstRelBlock; relBlock->VirtualAddress != 0;
-	 relBlock = nextRelBlock) {
+	for (IMAGE_BASE_RELOCATION* relBlock = firstRelBlock; relBlock->VirtualAddress
+  != 0; relBlock = nextRelBlock) {
 
 	DWORD pageRVA = relBlock->VirtualAddress;
 	WORD* entries = (WORD*)(relBlock + 1);
-	int numEntries = (relBlock->SizeOfBlock - sizeof(IMAGE_BASE_RELOCATION)) / sizeof(WORD);
+	int numEntries = (relBlock->SizeOfBlock - sizeof(IMAGE_BASE_RELOCATION)) /
+  sizeof(WORD);
 
 	for (int j = 0; j < numEntries; j++) {
-		WORD entry = entries[j];
-		DWORD type = entry >> 12;
-		DWORD offset = entry & 0xFFF;
+			WORD entry = entries[j];
+			DWORD type = entry >> 12;
+			DWORD offset = entry & 0xFFF;
 
-		axeRelocs[relocCounter].sectionIndex = findSectionForRVA(pageRVA + offset);
-		axeRelocs[relocCounter].offset = (pageRVA + offset) - sectionRVA;
-		axeRelocs[relocCounter].type = type;
-		relocCounter++;
+			axeRelocs[relocCounter].sectionIndex = findSectionForRVA(pageRVA +
+  offset); axeRelocs[relocCounter].offset = (pageRVA + offset) - sectionRVA;
+			axeRelocs[relocCounter].type = type;
+			relocCounter++;
 	}
-}
+  }
 
 	*/
 
@@ -176,55 +237,56 @@ void AdrenochromeBuilder::populateContext()
 	// TODO: imports
 	for (int i = 0; importDescriptors[i].Name != 0; i++)
 	{
-		PIMAGE_IMPORT_DESCRIPTOR desc = &importDescriptors[i];
-		char* dllName = (char*)(baseAddress + desc->Name);
+			PIMAGE_IMPORT_DESCRIPTOR desc = &importDescriptors[i];
+			char* dllName = (char*)(baseAddress + desc->Name);
 
-		PIMAGE_THUNK_DATA thunk = (PIMAGE_THUNK_DATA)(baseAddress + desc->OriginalFirstThunk);
-		int funcIndex = 0;
+			PIMAGE_THUNK_DATA thunk = (PIMAGE_THUNK_DATA)(baseAddress +
+	desc->OriginalFirstThunk); int funcIndex = 0;
 
-		while (thunk->u1.AddressOfData != 0)
-		{
-			AXE_IMPORT* imp = &axeImports[importCounter++];
-
-			imp->moduleName = dllName;
-
-			if (thunk->u1.Ordinal & IMAGE_ORDINAL_FLAG)
+			while (thunk->u1.AddressOfData != 0)
 			{
-				imp->functionName = NULL;          // you can store ordinal if needed
-			}
-			else
-			{
-				PIMAGE_IMPORT_BY_NAME ibn = (PIMAGE_IMPORT_BY_NAME)(baseAddress + thunk->u1.AddressOfData);
-				imp->functionName = (char*)ibn->Name;
-			}
+					AXE_IMPORT* imp = &axeImports[importCounter++];
 
-			if (thunk->u1.ForwarderString != 0)
-			{
-				imp->forwarderName = (char*)(baseAddress + thunk->u1.ForwarderString);
-			}
-			else
-			{
-				imp->forwarderName = NULL;
-			}
+					imp->moduleName = dllName;
 
-			imp->patchAddress = NULL;  // set later when loader maps
-			thunk++;
-		}
+					if (thunk->u1.Ordinal & IMAGE_ORDINAL_FLAG)
+					{
+							imp->functionName = NULL;          // you can store
+	ordinal if needed
+					}
+					else
+					{
+							PIMAGE_IMPORT_BY_NAME ibn =
+	(PIMAGE_IMPORT_BY_NAME)(baseAddress + thunk->u1.AddressOfData);
+							imp->functionName = (char*)ibn->Name;
+					}
+
+					if (thunk->u1.ForwarderString != 0)
+					{
+							imp->forwarderName = (char*)(baseAddress +
+	thunk->u1.ForwarderString);
+					}
+					else
+					{
+							imp->forwarderName = NULL;
+					}
+
+					imp->patchAddress = NULL;  // set later when loader maps
+					thunk++;
+			}
 	}
 	*/
 
-
-
-
 	// ctx_->pAxeImports = axeImports;
-	// 
+	//
 
 	/*
 	// TODO: Section Blobs
-	// TODO: this would be better and more correct? 
-	DWORD fileOffset = sizeof(AXE_HEADER) + axeHeader.SectionCount * sizeof(AXE_SECTION)
-                 + axeHeader.ImportCount * sizeof(AXE_IMPORT)
-                 + axeHeader.RelocCount * sizeof(AXE_RELOC); // if any
+	// TODO: this would be better and more correct?
+	DWORD fileOffset = sizeof(AXE_HEADER) + axeHeader.SectionCount *
+	sizeof(AXE_SECTION)
+			 + axeHeader.ImportCount * sizeof(AXE_IMPORT)
+			 + axeHeader.RelocCount * sizeof(AXE_RELOC); // if any
 
 	PAXE_SECTION axeSections = ...; // array of AXE_SECTION
 	uint8_t* srcBase = peFileBuffer;        // FILE bytes
@@ -233,37 +295,48 @@ void AdrenochromeBuilder::populateContext()
 
 	PIMAGE_SECTION_HEADER pSectionHeader = IMAGE_FIRST_SECTION(pNtHeaders);
 
-	for (WORD i = 0; i < pNtHeaders->FileHeader.NumberOfSections; i++, pSectionHeader++) {
-    	char name[9] = {0};
-    	memcpy(name, pSectionHeader->Name, 8);
+	for (WORD i = 0; i < pNtHeaders->FileHeader.NumberOfSections; i++,
+	pSectionHeader++) { char name[9] = {0}; memcpy(name, pSectionHeader->Name, 8);
 
-		if (strncmp(name, ".text", 5) == 0 ||
-			strncmp(name, ".rdata", 6) == 0 ||
-			strncmp(name, ".data", 5) == 0)
-		{
-			// Fill AXE_SECTION metadata
-			axeSections[i].RVA = pSectionHeader->VirtualAddress;
-			axeSections[i].Size = pSectionHeader->Misc.VirtualSize;
-			axeSections[i].Offset = fileOffset;
-			axeSections[i].Characteristics = pSectionHeader->Characteristics;
+			if (strncmp(name, ".text", 5) == 0 ||
+					strncmp(name, ".rdata", 6) == 0 ||
+					strncmp(name, ".data", 5) == 0)
+			{
+					// Fill AXE_SECTION metadata
+					axeSections[i].RVA = pSectionHeader->VirtualAddress;
+					axeSections[i].Size = pSectionHeader->Misc.VirtualSize;
+					axeSections[i].Offset = fileOffset;
+					axeSections[i].Characteristics =
+	pSectionHeader->Characteristics;
 
-			memcpy(dstBuffer + fileOffset,
-				srcBase + pSectionHeader->PointerToRawData,
-				pSectionHeader->SizeOfRawData);
+					memcpy(dstBuffer + fileOffset,
+							srcBase + pSectionHeader->PointerToRawData,
+							pSectionHeader->SizeOfRawData);
 
-			// Move fileOffset to next section (aligned if desired)
-			fileOffset += align(pSectionHeader->SizeOfRawData, 0x1000);
-		}
+					// Move fileOffset to next section (aligned if desired)
+					fileOffset += align(pSectionHeader->SizeOfRawData, 0x1000);
+			}
 	}
 	*/
-
 }
 
-
-bool AdrenochromeBuilder::createAXE(
-	std::string path,
-	std::vector<uint8_t>& buffer)
+bool AdrenochromeBuilder::createAXE(std::string path)
 {
+
+	std::ofstream outfileStream_(path, std::ios::binary | std::ios::trunc);
+	if (!outfileStream_)
+	{
+		return false;
+	}
+	// TODO: do i ever need to "close" the stream
+	return outfileStream_.good();
+}
+
+bool AdrenochromeBuilder::createAXE(std::string path,
+									std::vector<uint8_t> &buffer)
+{
+	// TODO: this var should be a class variable so i can write to it from any
+	// function in this class?
 	std::ofstream outfile(path, std::ios::binary | std::ios::trunc);
 
 	if (!outfile)
@@ -273,4 +346,3 @@ bool AdrenochromeBuilder::createAXE(
 	outfile.write(reinterpret_cast<const char *>(buffer.data()), buffer.size());
 	return outfile.good();
 }
-
