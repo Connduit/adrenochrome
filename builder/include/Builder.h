@@ -69,7 +69,8 @@ private:
 	ULONG_PTR rawImageBase_; // TODO: rename to 
 	//ULONG_PTR baseAddress_;  // TODO: ? 
 	//ULONG_PTR currentAddress_; // NOTE: the current address ("location") we're writing to (within the baseaddress)
-	PAXE_CONTEXT ctx_;
+	//PAXE_CONTEXT ctx_;
+	AXE_CONTEXT ctx_;
 
 	std::ofstream outfileStream_;
 
