@@ -5,45 +5,60 @@
 #include <windows.h> // NOTE: needed for __forceinline
 
 typedef struct _AXE_HEADER {
-    DWORD Magic;             // e.g., 0x58454121 = "AXE!" (NOT MZ) // TODO: rename to e_magic?
-    //DWORD Magic;           // tells us if pe is 32 or 64 
-    WORD  Version;           // Format version
-    WORD  ModuleType;        // Engine = 0, Module = 1, etc.
+    // TODO: add default constructor for this? 
 
-    DWORD SizeOfImage;       // How much memory to allocate
-    DWORD SizeOfAxe;       // How much memory to allocate for the axe // TODO: use this instead of sizeofimage
-    DWORD EntryPointRVA;     // Offset to the entry function inside the image // TODO: rename for consistency
 
-    DWORD SectionCount;      // Number of sections
-    DWORD SectionTableOffset;// Offset to custom section descriptors // NOTE: should just be at the end of this struct right? 
+    WORD Magic;             // e.g., 0x58454121 = "AXE!" (NOT MZ) // TODO: rename to e_magic
+    // WORD  Version;           // Format version
+    // WORD  ModuleType;        // Engine = 0, Module = 1, etc.
 
-    DWORD RelocOffset;       // Offset to relocations (AXE-specific format)
-    DWORD RelocCount;        
+    // DWORD SizeOfImage;       // How much memory to allocate
+    DWORD SizeOfAxe;       // How much memory to allocate for the axe // optional? this would only be used by the loader
+    DWORD EntryPointRVA;     // Offset to the entry function inside the image // TODO: rename for consistency. this would only be used by the loader? 
 
-    DWORD ImportOffset;      // Offset to hashed imports
-    DWORD ImportCount;
+    WORD NumberOfSections;      // Number of sections
+    // DWORD SectionTableOffset;// Offset to custom section descriptors // NOTE: only used by loader
 
-    DWORD Flags;             // encryption flags, compression, etc.
-    DWORD Reserved;          // padding / future use
+    //DWORD RelocOffset;       // Offset to relocations (AXE-specific format) // NOTE: only used by loader
+    WORD NumberOfRelocations;        
+
+   //  DWORD ImportOffset;      // Offset to hashed imports // NOTE: only used by loader
+    WORD NumberOfImports;      // Number of imports
+
+    // DWORD Flags;             // encryption flags, compression, etc.
+    // DWORD Reserved;          // padding / future use 
 } AXE_HEADER, *PAXE_HEADER;
 
 typedef struct _AXE_SECTION {
-    DWORD RVA;               // where to map it
+    // DWORD RVA;               // where to map it (optional)? 
     DWORD Size;              // virtual size
     DWORD Offset;            // offset in AXE file
-    DWORD Characteristics;   // RWX flags
+    ULONG_PTR memoryAddress; // ULONG_PTR? // needed by the custom loader 
+    // void* memoryAddress; // ULONG_PTR? // needed by the custom loader 
+    // DWORD Characteristics;   // RWX flags
 } AXE_SECTION, *PAXE_SECTION;
 
 typedef struct _AXE_IMPORT {
-    DWORD Hash;          // Adler32 hash of function name
-    DWORD Offset;        // Where to write the resolved address
-    DWORD DllHash;       // Hash of DLL name (optional)
+    const char* moduleName;     // original module name // TODO: change to hash
+    const char* functionName;   // original function name (can be ordinal too?) // TODO: change to hash
+    void** patchAddress;        // where to write resolved address
+    const char* forwarderName;  // optional, "OtherModule.Func" if forwarded // TODO: change to hash
 } AXE_IMPORT, *PAXE_IMPORT;
+
+// TODO: (not implemented, optional) 
+typedef struct _AXE_RELOCATION
+{
+    DWORD sectionIndex;  // which section this relocation applies to
+    DWORD offset;        // offset inside section to patch
+    DWORD type;          // e.g., 32-bit or 64-bit relocation
+} AXE_RELOCATION, *PAXE_RELOCATION;
 
 typedef struct _AXE_CONTEXT {
     AXE_HEADER axeHeader;
     AXE_SECTION axeSection;
     AXE_IMPORT axeImport;
+    AXE_RELOCATION axeRelocation;
+    // Section Data Blobs
 } AXE_CONTEXT, *PAXE_CONTEXT;
 
 

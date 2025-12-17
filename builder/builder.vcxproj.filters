@@ -18,7 +18,7 @@
     <ClCompile Include="src\converter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\builder.cpp">
+    <ClCompile Include="src\Builder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\main.cpp">
@@ -26,7 +26,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\builder.h">
+    <ClInclude Include="include\Builder.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\common\include\AXEStructs.h">

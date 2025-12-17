@@ -319,7 +319,6 @@ BOOL resolveImports(PLOADER_CONTEXT ctx)
 
 	ULONG_PTR importModuleBase;
 	//DWORD iatAddress; // TODO: change to type PIMAGE_THUNK_DATA?
-	PIMAGE_THUNK_DATA iatAddress; // TODO: move declaration to be inside of the for loop
 
 	// itterate through all imports
 	// NOTE: Name is an RVA to the name as a string
@@ -329,10 +328,10 @@ BOOL resolveImports(PLOADER_CONTEXT ctx)
 
 
 	// TODO: Resolve imports (fix this comment) 
-	for (; importDesc->Name; ++importDesc)
+	for (; importDesc->Name; ++importDesc) // TODO: how does this for loop know when to stop? 
 	{
 		// use LoadLibraryA to load the imported module into memory
-		importModuleBase = (ULONG_PTR)ctx->pLoadLibraryA((LPCSTR)(ctx->baseAddress + ((PIMAGE_IMPORT_DESCRIPTOR)importDesc)->Name)); // NOTE: this variable was called rawImageBase (that's what the comments above are referring to)
+		importModuleBase = (ULONG_PTR)ctx->pLoadLibraryA((LPCSTR)(ctx->baseAddress + ((PIMAGE_IMPORT_DESCRIPTOR)importDesc)->Name));
 
 		// TODO: remove? i don't think case will evere happen
 		if (!importModuleBase) 
@@ -340,16 +339,13 @@ BOOL resolveImports(PLOADER_CONTEXT ctx)
 			continue;
 		}
 
-		// uiValueD = VA of the OriginalFirstThunk
-		// TODO: should be a ULONG_PTR? using a DWORD would break this when the dll is greater than 4gb (this should never happen tho)
-		//DWORD sizeofRawData = (baseAddress + ((PIMAGE_IMPORT_DESCRIPTOR)importDesc)->OriginalFirstThunk);
 		PIMAGE_THUNK_DATA originalThunk = (PIMAGE_THUNK_DATA)(ctx->baseAddress + ((PIMAGE_IMPORT_DESCRIPTOR)importDesc)->OriginalFirstThunk);
 
 		// uiValueA = VA of the IAT (via first thunk not origionalfirstthunk)
-		iatAddress = (PIMAGE_THUNK_DATA)(ctx->baseAddress + ((PIMAGE_IMPORT_DESCRIPTOR)importDesc)->FirstThunk);
+		PIMAGE_THUNK_DATA iatAddress = ctx->baseAddress + ((PIMAGE_IMPORT_DESCRIPTOR)importDesc)->FirstThunk;
 
 		// itterate through all imported functions, importing by ordinal if no name present
-		for (; iatAddress->u1.AddressOfData; ++iatAddress, ++originalThunk)
+		for (; iatAddress->u1.AddressOfData; ++iatAddress, ++originalThunk) // TODO: how does this for loop know when to stop? 
 		{
 			// sanity check uiValueD as some compilers only import by FirstThunk
 			// NOTE: i can remove this if block if ik for certain my compiler isn't only importing by first thunk

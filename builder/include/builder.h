@@ -8,6 +8,7 @@
 
 #include <cstdint> 
 #include <string>
+#include <vector>
 
 /*
 TODO: remove: 
@@ -55,7 +56,8 @@ private:
 	bool createAXE(std::string path, std::vector<uint8_t>& buffer); // TODO: typedef vector<uint8_t>
 
 	ULONG_PTR rawImageBase_; // TODO: rename to 
-	//ULONG_PTR baseAddress_; 
+	//ULONG_PTR baseAddress_;  // TODO: ? 
+	//ULONG_PTR currentAddress_; // NOTE: the current address ("location") we're writing to (within the baseaddress)
 	PAXE_CONTEXT ctx_;
 
 	//std::string inputFilename;
