@@ -5,6 +5,12 @@
 #ifndef ADRENOCHROME_LOADER_H
 #define ADRENOCHROME_LOADER_H
 
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+
+
+DWORD WINAPI startEngine(LPVOID lpParam );// starts the "engine.axe" logic
+
 int loadAXE();
 
 // engine.dll is embedded in a PE section of loader.dll

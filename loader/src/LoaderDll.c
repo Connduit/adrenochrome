@@ -25,7 +25,8 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD dwReason, LPVOID lpReserved)
 		MessageBoxA(NULL, "LoaderDll.c:: Hello from DllMain!", "Reflective Dll Injection", MB_OK);
 		// NOTE: we use CreateRemoteThread() so we can unload the host.dll when we're done?  
 		// or maybe we're not at this point yet
-		//CreateRemoteThread();
+		//CreateRemoteThread(); for loadAxe(); (specifically for the engine.axe)
+		CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)startEngine, NULL, 0, NULL);
 		break;
 	case DLL_PROCESS_DETACH:
 	case DLL_THREAD_ATTACH:

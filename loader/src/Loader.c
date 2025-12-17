@@ -1,9 +1,26 @@
 #include "Loader.h"
 #include "AXEStructs.h"
 
-int loadAXE()
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+
+
+
+// NOTE: this is the function that would be called by a netsvcs svchost.exe process.
+// For testing purposes, we will just call it through LoaderDll's DllMain function using CreateThread
+//int startEngine()
+DWORD WINAPI startEngine(LPVOID lpParam)
 {
-	char* targetAxe = "/path/to/targetAxe";
+	loadAxeFromDisk();
+	return 0;
+}
+
+//int loadAXE(char* /path/to/targetAxe)
+//int loadAXE()
+int loadAxeFromDisk()
+{
+	//char* targetAxe = "/path/to/targetAxe";
+	char* targetAxe = "loader.axe";
 	HANDLE hFile = CreateFileA(targetAxe, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hFile == INVALID_HANDLE_VALUE)
 	{
@@ -37,7 +54,15 @@ int loadAXE()
 	}
 
 	PAXE_HEADER aHeader = (PAXE_HEADER)lpBuffer;
+	loadAxe(lpBuffer, dwLength);
 
+}
+
+void loadAxe(LPVOID lpBuffer, DWORD dwLength)
+{
+	//ULONG_PTR baseAddress = VirtualAlloc(preferred base addr, num bytes to  allocate, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+	ULONG_PTR baseAddress = VirtualAlloc(NULL, dwLength, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+	// TODO: manually map here
 
 }
 

@@ -10,9 +10,9 @@
 #include <algorithm>
 
 AdrenochromeBuilder::AdrenochromeBuilder()
-	: rawImageBase_(0)
+	: rawImageBase_(0),
+	  ctx_()
 	  // baseAddress_(0),
-	  //ctx_(nullptr)
 {
 	// LOGGING STUFF?
 }
@@ -89,7 +89,11 @@ void AdrenochromeBuilder::populateContext()
 	// sizeof(ctx_->axeHeader));
 
 	// TODO: create a function to generate an axe_section vector
+	//std::vector<AXE_SECTION> axeSections(5); // 5 default-constructed AXE_SECTIONs
+	//std::vector<AXE_SECTION> axeSections(3, AXE_SECTION{}); // 3 AXE_SECTIONs explicitly zeroed
+	// TODO: make AxeSections its own class? (might be overkill)
 	std::vector<AXE_SECTION> axeSections;
+
 	AXE_SECTION text{};
 	memcpy(text.Name, ".text", 5);
 	text.memoryAddress = 0x1000; // starting addr? (this is an RVA?)
