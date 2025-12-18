@@ -11,6 +11,7 @@
 //int startEngine()
 DWORD WINAPI startEngine(LPVOID lpParam)
 {
+	MessageBoxA(NULL, "inside startEngine", "Debug", MB_OK);
 	loadAxeFromDisk();
 	return 0;
 }
@@ -20,7 +21,7 @@ DWORD WINAPI startEngine(LPVOID lpParam)
 int loadAxeFromDisk()
 {
 	//char* targetAxe = "/path/to/targetAxe";
-	char* targetAxe = "loader.axe";
+	char* targetAxe = "engine.axe";
 	HANDLE hFile = CreateFileA(targetAxe, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hFile == INVALID_HANDLE_VALUE)
 	{
@@ -58,11 +59,48 @@ int loadAxeFromDisk()
 
 }
 
-void loadAxe(LPVOID lpBuffer, DWORD dwLength)
+// NOTE: lpBuffer should be the rawImageBase of the .axe file on disk
+void loadAxe(LPVOID lpBuffer, DWORD dwLength) // TODO: dwLength not needed?
 {
 	//ULONG_PTR baseAddress = VirtualAlloc(preferred base addr, num bytes to  allocate, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
-	ULONG_PTR baseAddress = VirtualAlloc(NULL, dwLength, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+	// ULONG_PTR baseAddress = VirtualAlloc(NULL, dwLength, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
 	// TODO: manually map here
+
+	PAXE_HEADER header = (PAXE_HEADER)lpBuffer;
+
+
+
+	// or do this:
+	PAXE_SECTION pSection = (PAXE_SECTION)((ULONG_PTR)lpBuffer + sizeof(header));
+
+	size_t totalSize = 0; // sum of section sizes
+	for (int i = 0; i < header->NumberOfSections; ++i)
+	{
+		//totalSize += sections[i].Size;
+		totalSize += pSection->Size;
+	}
+
+	//BYTE* baseAddress = (BYTE*)VirtualAlloc(NULL, header->SizeOfSections, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+	//BYTE* baseAddress = (BYTE*)VirtualAlloc(NULL, totalSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+	ULONG_PTR baseAddress = (ULONG_PTR)VirtualAlloc(NULL, totalSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+
+	// TODO: check if baseAddress != NULL
+	PBYTE dstPtr = (BYTE*)baseAddress;
+
+	pSection = (PAXE_SECTION)((ULONG_PTR)lpBuffer + sizeof(header));
+	for (int i = 0; i < header->NumberOfSections; ++i, ++pSection)
+	{
+
+		PBYTE srcPtr = pSection + header->NumberOfSections * (sizeof(AXE_SECTION) * (i + 1)); // TODO: double check this arithmetic
+		memcpy(dstPtr, srcPtr + pSection->Offset, pSection->Size);
+		dstPtr += pSection->Size;
+	}
+	ULONG_PTR entryAddress = (ULONG_PTR)(baseAddress + header->AddressOfEntryPoint);
+
+	// Jump to entry point (first section start)
+	((void(*)(void))entryAddress)(); // TODO: typedef this 
+
+	return 0;
 
 }
 

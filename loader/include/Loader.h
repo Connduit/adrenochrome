@@ -11,7 +11,7 @@
 
 DWORD WINAPI startEngine(LPVOID lpParam );// starts the "engine.axe" logic
 
-int loadAXE();
+void loadAxe(LPVOID lpBuffer, DWORD dwLength);
 
 // engine.dll is embedded in a PE section of loader.dll
 void loadFromSection();

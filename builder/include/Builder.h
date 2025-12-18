@@ -63,7 +63,7 @@ private:
 	void pack(); // pack struct into raw bytes (serializer function) // remove? 
 
 	// TODO: rename function?
-	bool createAXE(std::string path="./loader.axe");
+	bool createAXE(std::string path="./loader.axe"); // TODO: default path should be found from argv[1] + .axe 
 	bool createAXE(std::string path, std::vector<uint8_t>& buffer); // TODO: typedef vector<uint8_t>
 
 	ULONG_PTR rawImageBase_; // TODO: rename to 

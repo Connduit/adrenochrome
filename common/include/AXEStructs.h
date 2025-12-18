@@ -15,9 +15,11 @@ typedef struct _AXE_HEADER {
     //WORD Version;           // Format version
     // WORD  ModuleType;        // Engine = 0, Module = 1, etc.
 
-    // DWORD SizeOfImage;       // How much memory to allocate
+    DWORD SizeOfSections;    // TODO: 
+    DWORD SizeOfImage;       // How much memory to allocate
     //DWORD SizeOfAxe;       // How much memory to allocate for the axe // optional? this would only be used by the loader
     //DWORD EntryPointRVA;     // Offset to the entry function inside the image // TODO: rename for consistency. this would only be used by the loader? 
+    DWORD AddressOfEntryPoint;   // where to start executing
 
     WORD NumberOfSections;      // Number of sections
     // DWORD SectionTableOffset; // Offset to custom section descriptors (sizeof(AXE_HEADER)) // NOTE: only used by loader
@@ -62,6 +64,9 @@ typedef struct _AXE_CONTEXT {
     AXE_SECTION axeSection;
     AXE_IMPORT axeImport;
     AXE_RELOCATION axeRelocation;
+    //AXE_SECTION* axeSections;
+    //AXE_IMPORT* axeImports;
+    //AXE_RELOCATION* axeRelocations;
     // Section Data Blobs
 } AXE_CONTEXT, *PAXE_CONTEXT;
 
