@@ -60,6 +60,7 @@ private:
 
 
 
+	//ULONG_PTR calculateEntryPoint(); // TODO: rename to calculateAddressOfEntryPoint() ? 
 	void calculateEntryPoint(); // TODO: rename to calculateAddressOfEntryPoint() ? 
 
 	void writeToStream(AXE_HEADER header); // update header 

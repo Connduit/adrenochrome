@@ -172,6 +172,8 @@ void AdrenochromeBuilder::populateContext()
 	}
 
 	updateSection();
+	calculateEntryPoint();
+	updateHeader(); // TODO: move this into the calculateEntryPoint() function? 
 	
 
 	pSectionHeader = IMAGE_FIRST_SECTION(pNtHeaders);
@@ -288,8 +290,41 @@ void AdrenochromeBuilder::updateSection() // TODO: change to updateSectionHeader
 	}
 }
 
+//ULONG_PTR AdrenochromeBuilder::calculateEntryPoint()
 void AdrenochromeBuilder::calculateEntryPoint()
 {
+	DWORD offsetIntoSection = 0; 
+
+	PIMAGE_NT_HEADERS pNtHeaders = (PIMAGE_NT_HEADERS)(rawImageBase_ + ((PIMAGE_DOS_HEADER)rawImageBase_)->e_lfanew);
+	DWORD AddressOfEntryPoint = pNtHeaders->OptionalHeader.AddressOfEntryPoint;
+
+	WORD nSections = pNtHeaders->FileHeader.NumberOfSections;
+	PIMAGE_SECTION_HEADER pSectionHeader = IMAGE_FIRST_SECTION(pNtHeaders);
+
+	// find what section the entry point is in 
+	for (WORD i = 0; i < nSections; ++i, ++pSectionHeader)
+	{
+		if (AddressOfEntryPoint >= pSectionHeader->VirtualAddress && 
+			AddressOfEntryPoint < pSectionHeader->VirtualAddress + pSectionHeader->Misc.VirtualSize)
+		{
+			offsetIntoSection = AddressOfEntryPoint - pSectionHeader->VirtualAddress; // NOTE: this is the RVA to the entry point relative to the section it's in
+
+			std::string sectionName(reinterpret_cast<const char*>(pSectionHeader->Name), strnlen(reinterpret_cast<const char*>(pSectionHeader->Name), 8));
+			//std::string sectionName = reinterpret_cast<char*>(pSectionHeader->Name);
+
+			std::vector<AXE_SECTION>::iterator iter = std::find_if(ctx_.axeSections.begin(), ctx_.axeSections.end(),
+				[&sectionName](const AXE_SECTION& s) { return std::string(s.Name) == sectionName; });
+			// axeSection = ctx_.axeSections[TODO_INDEX]; // TODO_INDEX gets us 
+
+			if (iter != ctx_.axeSections.end())
+			{
+				ctx_.axeHeader.AddressOfEntryPoint = iter->Offset + offsetIntoSection;
+				return;
+			}
+		}
+	}
+	// TOD: 
+	// updateHeader()
 }
 
 

@@ -10,7 +10,7 @@ typedef struct _AXE_LOADER_CONTEXT {
     AXE_IMPORT* axeImports;
     AXE_RELOCATION* axeRelocations;
     // Section Data Blobs
-    // void* ImageBase? 
+    // void* ImageBase? or should this be in AXE_HEADER? 
 } AXE_LOADER_CONTEXT, *PAXE_LOADER_CONTEXT;
 
 
