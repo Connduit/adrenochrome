@@ -288,6 +288,10 @@ void AdrenochromeBuilder::updateSection() // TODO: change to updateSectionHeader
 	}
 }
 
+void AdrenochromeBuilder::calculateEntryPoint()
+{
+}
+
 
 
 bool AdrenochromeBuilder::createAXE()
