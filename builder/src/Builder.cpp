@@ -8,6 +8,7 @@
 #include <iostream>
 #include <string>
 #include <algorithm>
+#include <filesystem> // NOTE: just for replace_extension()
 
 AdrenochromeBuilder::AdrenochromeBuilder()
 	: rawImageBase_(0),
@@ -21,15 +22,23 @@ void AdrenochromeBuilder::build()
 {
 	// TODO: main function
 	createAXE(); // check return type
+	initializeContext();
 	populateContext(); // change function type from void so i can check return type
+
+	outfileStream_.close();
 }
 
 // void AdrenochromeBuilder::loadFile(std::string& path)
 // void AdrenochromeBuilder::loadFile(const std::wstring& path)
 //  TODO: change return type?
-void AdrenochromeBuilder::loadFile(LPCWSTR path)
+//void AdrenochromeBuilder::loadFile(LPCWSTR path)
+void AdrenochromeBuilder::loadFile(std::string& path)
 {
-	HANDLE hFile = CreateFileW(path, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	std::filesystem::path p(path);
+	outputFilename_ = p.replace_extension("axe").string();
+
+	//HANDLE hFile = CreateFileW(path, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	HANDLE hFile = CreateFileA(path.c_str(), GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hFile == INVALID_HANDLE_VALUE)
 	{
 		// TODO: throw helpful error
@@ -57,6 +66,41 @@ void AdrenochromeBuilder::loadFile(LPCWSTR path)
 	}
 }
 
+void AdrenochromeBuilder::initializeContext() // TODO: rename to initializeHeader? 
+{
+
+	BUILD_CONFIG buildConfig;
+
+	//////////////////////////////////////////////////
+	// AXE_HEADER
+	ctx_.axeHeader.Magic = 0xBEEF;
+	ctx_.axeHeader.SizeOfImage = 0;
+	ctx_.axeHeader.AddressOfEntryPoint = 0;
+	ctx_.axeHeader.NumberOfSections = 0; // TODO: just set to buildConfig.sectionNames.size() ? 
+	ctx_.axeHeader.NumberOfRelocations = 0;
+	ctx_.axeHeader.NumberOfImports = 0;
+
+	// TODO: delete? pointless? 
+	// outfileStream_.write(reinterpret_cast<const char *>(&ctx_.axeHeader), sizeof(ctx_.axeHeader));
+
+	for (std::string& name : buildConfig.sectionNames)
+	{
+		AXE_SECTION section{};
+		size_t copySize = (name.size() < sizeof(section.Name)) ? name.size() : sizeof(section.Name);
+		std::memcpy(section.Name, name.data(), copySize);
+		section.memoryAddress = 0; // starting addr for the specific section? (this is an RVA?) (fill later?)
+		section.Offset = 0;			 // raw offset (we will fill this later)
+		section.Size = 0;				 // raw size (we will fill this later)
+		ctx_.axeSections.push_back(section);
+
+		//ctx_.axeHeader.NumberOfSections++;
+	}
+	ctx_.axeHeader.NumberOfSections = ctx_.axeSections.size(); // TODO: this is better? 
+	updateHeader();
+
+
+}
+
 // TODO: do i even need a axe_struct? will def help with organizing and future
 // proofing but what if i just did a virtualalloc using the SizeOfImage and just
 // wrote everything i want to keep into that buffer. And then kept track of how
@@ -75,16 +119,8 @@ void AdrenochromeBuilder::populateContext()
 	// pNtHeaders->OptionalHeader.AddressOfEntryPoint; // TODO: for should i just
 	// return absolute?
 
-	//////////////////////////////////////////////////
-	// AXE_HEADER
-	ctx_.axeHeader.Magic = 0xBEEF;
-	// ctx_->axeHeader.NumberOfSections = 3; // TODO: should start o
-	ctx_.axeHeader.NumberOfSections = 0;
-	ctx_.axeHeader.NumberOfRelocations = 0;
-	ctx_.axeHeader.NumberOfImports = 0;
-
 	// NOTE: assume outfileStream_ is not null
-	outfileStream_.write(reinterpret_cast<const char *>(&ctx_.axeHeader), sizeof(ctx_.axeHeader));
+	//outfileStream_.write(reinterpret_cast<const char *>(&ctx_.axeHeader), sizeof(ctx_.axeHeader));
 	// outfileStream_.write(reinterpret_cast<const char*>(&(ctx_->axeHeader)),
 	// sizeof(ctx_->axeHeader));
 
@@ -92,6 +128,7 @@ void AdrenochromeBuilder::populateContext()
 	//std::vector<AXE_SECTION> axeSections(5); // 5 default-constructed AXE_SECTIONs
 	//std::vector<AXE_SECTION> axeSections(3, AXE_SECTION{}); // 3 AXE_SECTIONs explicitly zeroed
 	// TODO: make AxeSections its own class? (might be overkill)
+	/*
 	std::vector<AXE_SECTION> axeSections;
 
 	AXE_SECTION text{};
@@ -100,14 +137,16 @@ void AdrenochromeBuilder::populateContext()
 	text.Offset = 0;			 // raw offset (we will fill this later)
 	text.Size = 0;				 // raw size (we will fill this later)
 	axeSections.push_back(text);
-
 	ctx_.axeHeader.NumberOfSections++;
+	*/
 	// TODO: make a write function to handle moving the outfilestream ptr around
-	outfileStream_.seekp(0, std::ios::beg);															 // move outfilestream ptr to beginning on file
-	outfileStream_.write(reinterpret_cast<const char *>(&ctx_.axeHeader), sizeof(ctx_.axeHeader)); // overwrite with updated header
+
+	// TODO: now done somewhere else
+	//outfileStream_.seekp(0, std::ios::beg);															 // move outfilestream ptr to beginning on file
+	//outfileStream_.write(reinterpret_cast<const char *>(&ctx_.axeHeader), sizeof(ctx_.axeHeader)); // overwrite with updated header
 
 	// outfileStream_.seekp(ctx_->axeHeader.SectionTableOffset, std::ios::beg); // TODO: uncomment if we end up adding a helpful offset
-	outfileStream_.write(reinterpret_cast<const char *>(&text), sizeof(text));
+	//outfileStream_.write(reinterpret_cast<const char *>(&text), sizeof(text)); // TODO: no point of this... it will get overwritten anyways
 
 	// uint32_t dataStart = SectionTableOffset + SectionCount * sizeof(AXE_SECTION)
 	uint32_t dataStart = sizeof(ctx_.axeHeader) + ctx_.axeHeader.NumberOfSections * sizeof(AXE_SECTION);
@@ -120,8 +159,10 @@ void AdrenochromeBuilder::populateContext()
 		std::string sectionName = reinterpret_cast<char*>(pSectionHeader->Name);
 		//std::vector<AXE_SECTION>::const_iterator iter = std::find_if(axeSections.begin(), axeSections.end(), [&sectionName](const AXE_SECTION& s) { return s.Name == sectionName; });
 		// Check the current section's name to see if we want to keep it
-		std::vector<AXE_SECTION>::iterator iter = std::find_if(axeSections.begin(), axeSections.end(), [&sectionName](const AXE_SECTION& s) { return s.Name == sectionName; });
-		if (iter != axeSections.end())
+		std::vector<AXE_SECTION>::iterator iter = std::find_if(ctx_.axeSections.begin(), ctx_.axeSections.end(), 
+			[&sectionName](const AXE_SECTION& s) { return std::string(s.Name) == sectionName; });
+
+		if (iter != ctx_.axeSections.end())
 		{
 			DWORD SizeOfRawData = pSectionHeader->SizeOfRawData;
 			iter->Offset = cursor;
@@ -129,13 +170,9 @@ void AdrenochromeBuilder::populateContext()
 			cursor += iter->Size;
 		}
 	}
+
+	updateSection();
 	
-	// Update SectionHeaders... TODO: make this its own func
-	outfileStream_.seekp(sizeof(ctx_.axeHeader), std::ios::beg);
-	for (unsigned int i = 0; i < axeSections.size(); ++i)
-	{
-		outfileStream_.write(reinterpret_cast<const char *>(&axeSections[i]), sizeof(AXE_SECTION));
-	}
 
 	pSectionHeader = IMAGE_FIRST_SECTION(pNtHeaders);
 	// Write section data
@@ -144,8 +181,10 @@ void AdrenochromeBuilder::populateContext()
 		std::string sectionName = reinterpret_cast<char*>(pSectionHeader->Name);
 		//std::vector<AXE_SECTION>::const_iterator iter = std::find_if(axeSections.begin(), axeSections.end(), [&sectionName](const AXE_SECTION& s) { return s.Name == sectionName; });
 		// Check the current section's name to see if we want to keep it
-		std::vector<AXE_SECTION>::iterator iter = std::find_if(axeSections.begin(), axeSections.end(), [&sectionName](const AXE_SECTION& s) { return s.Name == sectionName; });
-		if (iter != axeSections.end())
+		std::vector<AXE_SECTION>::iterator iter = std::find_if(ctx_.axeSections.begin(), ctx_.axeSections.end(), 
+			[&sectionName](const AXE_SECTION& s) { return std::string(s.Name) == sectionName; });
+
+		if (iter != ctx_.axeSections.end())
 		{
 
 			PBYTE srcPtr = (PBYTE)(rawImageBase_ + pSectionHeader->PointerToRawData);
@@ -159,10 +198,6 @@ void AdrenochromeBuilder::populateContext()
 			cursor += iter->Size;
 		}
 	}
-	outfileStream_.close();
-
-	// TODO:
-	// ctx_->axeSection = axeSections;
 
 	/*
 	// TODO: relocs
@@ -230,10 +265,35 @@ void AdrenochromeBuilder::populateContext()
 	//
 }
 
-bool AdrenochromeBuilder::createAXE(std::string path)
+void AdrenochromeBuilder::updateHeader()
+{
+	if (!outfileStream_) 
+	{
+		outfileStream_.seekp(0, std::ios::beg);
+		outfileStream_.write(reinterpret_cast<const char*>(&ctx_.axeHeader), sizeof(ctx_.axeHeader));
+	}
+
+}
+
+void AdrenochromeBuilder::updateSection() // TODO: change to updateSectionHeader? 
 {
 
-	outfileStream_.open(path, std::ios::binary | std::ios::trunc);
+	// TODO: do this check: if (!outfileStream_) 
+
+	//outfileStream_.seekp(sizeof(ctx_.axeHeader), std::ios::beg);
+	outfileStream_.seekp(sizeof(AXE_HEADER), std::ios::beg);
+	for (unsigned int i = 0; i < ctx_.axeSections.size(); ++i)
+	{
+		outfileStream_.write(reinterpret_cast<const char*>(&ctx_.axeSections[i]), sizeof(AXE_SECTION));
+	}
+}
+
+
+
+bool AdrenochromeBuilder::createAXE()
+{
+
+	outfileStream_.open(outputFilename_, std::ios::binary | std::ios::trunc);
 	if (!outfileStream_)
 	{
 		return false;

@@ -140,6 +140,7 @@
     <ClInclude Include="..\common\include\PEStructs.h" />
     <ClInclude Include="..\common\include\StatusCodes.h" />
     <ClInclude Include="..\common\include\Utils.h" />
+    <ClInclude Include="include\AxeLoaderContext.h" />
     <ClInclude Include="include\Loader.h" />
     <ClInclude Include="include\LoaderDll.h" />
     <ClInclude Include="include\LoaderHashes.h" />

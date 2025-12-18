@@ -1,7 +1,7 @@
 #ifndef ADRENOCHROME_BUILDER_H
 #define ADRENOCHROME_BUILDER_H
 
-#include "AXEStructs.h"
+#include "AxeBuilderContext.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h> // NOTE: needed for __forceinline
@@ -45,12 +45,22 @@ public:
 	//static void loadFile(std::string& path);
 	//static void loadFile(LPCWSTR path);
 	void loadFile(LPCWSTR path); // TODO: change return type
+	void loadFile(std::string& path); // TODO: change return type
 	
 	// TODO: should be the only public function?
 	void build();
 private:
+	void initializeContext();
 	void populateContext();
 	//void createContextInMemory(); // TODO: ??? virtuallloc is done here?
+
+	//void createHeader();
+	void updateHeader();
+	void updateSection();
+
+
+
+	void calculateEntryPoint(); // TODO: rename to calculateAddressOfEntryPoint() ? 
 
 	void writeToStream(AXE_HEADER header); // update header 
 	void writeToStream(AXE_SECTION section); // update section
@@ -63,13 +73,13 @@ private:
 	void pack(); // pack struct into raw bytes (serializer function) // remove? 
 
 	// TODO: rename function?
-	bool createAXE(std::string path="./loader.axe"); // TODO: default path should be found from argv[1] + .axe 
+	bool createAXE();
 	bool createAXE(std::string path, std::vector<uint8_t>& buffer); // TODO: typedef vector<uint8_t>
 
 	ULONG_PTR rawImageBase_; // TODO: rename to 
 	//ULONG_PTR baseAddress_;  // TODO: ? 
 	//ULONG_PTR currentAddress_; // NOTE: the current address ("location") we're writing to (within the baseaddress)
-	AXE_CONTEXT ctx_;
+	AXE_BUILDER_CONTEXT ctx_;
 
 	std::ofstream outfileStream_;
 

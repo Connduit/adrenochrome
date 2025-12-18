@@ -14,9 +14,10 @@ int main(int argc, char* argv[])
 		AdrenochromeBuilder builder;
 		// NOTE: just assume all argv values will be in ascii... TODO: don't assume this 
 		std::string s = argv[1];
-		std::wstring ws(s.begin(), s.end());
-		const wchar_t *path = ws.c_str();
-		builder.loadFile(path);
+		//std::wstring ws(s.begin(), s.end());
+		//const wchar_t *path = ws.c_str();
+		//builder.loadFile(path);
+		builder.loadFile(s);
 		builder.build();
 		//AdrenochromeBuilder::loadFile(argv[1]);
 	}

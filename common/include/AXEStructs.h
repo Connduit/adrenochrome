@@ -15,7 +15,7 @@ typedef struct _AXE_HEADER {
     //WORD Version;           // Format version
     // WORD  ModuleType;        // Engine = 0, Module = 1, etc.
 
-    DWORD SizeOfSections;    // TODO: 
+    //DWORD SizeOfSections;    // TODO: rva to section header instead? 
     DWORD SizeOfImage;       // How much memory to allocate
     //DWORD SizeOfAxe;       // How much memory to allocate for the axe // optional? this would only be used by the loader
     //DWORD EntryPointRVA;     // Offset to the entry function inside the image // TODO: rename for consistency. this would only be used by the loader? 
@@ -58,17 +58,6 @@ typedef struct _AXE_RELOCATION
     DWORD type;          // e.g., 32-bit or 64-bit relocation
 } AXE_RELOCATION, *PAXE_RELOCATION;
 
-// TODO: maybe turn this into just an "in-memory" version? 
-typedef struct _AXE_CONTEXT {
-    AXE_HEADER axeHeader;
-    AXE_SECTION axeSection;
-    AXE_IMPORT axeImport;
-    AXE_RELOCATION axeRelocation;
-    //AXE_SECTION* axeSections;
-    //AXE_IMPORT* axeImports;
-    //AXE_RELOCATION* axeRelocations;
-    // Section Data Blobs
-} AXE_CONTEXT, *PAXE_CONTEXT;
 
 
 #endif

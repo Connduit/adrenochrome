@@ -71,7 +71,7 @@ void loadAxe(LPVOID lpBuffer, DWORD dwLength) // TODO: dwLength not needed?
 
 
 	// or do this:
-	PAXE_SECTION pSection = (PAXE_SECTION)((ULONG_PTR)lpBuffer + sizeof(header));
+	PAXE_SECTION pSection = (PAXE_SECTION)((ULONG_PTR)lpBuffer + sizeof(AXE_HEADER));
 
 	size_t totalSize = 0; // sum of section sizes
 	for (int i = 0; i < header->NumberOfSections; ++i)
@@ -83,16 +83,20 @@ void loadAxe(LPVOID lpBuffer, DWORD dwLength) // TODO: dwLength not needed?
 	//BYTE* baseAddress = (BYTE*)VirtualAlloc(NULL, header->SizeOfSections, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 	//BYTE* baseAddress = (BYTE*)VirtualAlloc(NULL, totalSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 	ULONG_PTR baseAddress = (ULONG_PTR)VirtualAlloc(NULL, totalSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+	if (baseAddress == NULL)
+	{
+		// TODO: throw error? 
+		return;
+	}
 
 	// TODO: check if baseAddress != NULL
 	PBYTE dstPtr = (BYTE*)baseAddress;
 
-	pSection = (PAXE_SECTION)((ULONG_PTR)lpBuffer + sizeof(header));
+	pSection = (PAXE_SECTION)((ULONG_PTR)lpBuffer + sizeof(AXE_HEADER));
 	for (int i = 0; i < header->NumberOfSections; ++i, ++pSection)
 	{
-
-		PBYTE srcPtr = pSection + header->NumberOfSections * (sizeof(AXE_SECTION) * (i + 1)); // TODO: double check this arithmetic
-		memcpy(dstPtr, srcPtr + pSection->Offset, pSection->Size);
+		PBYTE srcPtr = (BYTE*)lpBuffer + pSection->Offset;
+		memcpy(dstPtr, srcPtr, pSection->Size);
 		dstPtr += pSection->Size;
 	}
 	ULONG_PTR entryAddress = (ULONG_PTR)(baseAddress + header->AddressOfEntryPoint);
