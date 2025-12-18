@@ -36,6 +36,10 @@ TODO: keep:
 - custom features (other needed stuff?)
 */
 
+// TODO: make subclasses, one for .axe files and one for .dll files?
+// or just add both functionality here?
+// NOTE: the .dll file builder makes small obfuscation adjustments but 
+// maintains the .dll structure unlike a .axe file 
 class AdrenochromeBuilder
 {
 public:

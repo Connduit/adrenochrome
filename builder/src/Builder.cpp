@@ -9,6 +9,7 @@
 #include <string>
 #include <algorithm>
 #include <filesystem> // NOTE: just for replace_extension()
+#include <cstring> // NOTE: needed for memcpy apparently (only on linux vscode)
 
 AdrenochromeBuilder::AdrenochromeBuilder()
 	: rawImageBase_(0),
