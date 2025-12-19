@@ -213,6 +213,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 		{
 			MessageBoxA(NULL, "Thread CREATED successfully", "Debug", MB_OK);
 		}
+		//FreeLibraryAndExitThread(hModule, 0);
 		break;
 
 	case DLL_THREAD_ATTACH:

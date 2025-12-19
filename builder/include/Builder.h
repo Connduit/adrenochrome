@@ -60,7 +60,8 @@ private:
 
 	//void createHeader();
 	void updateHeader();
-	void updateSection();
+	void updateSectionHeaders();
+	void updateSectionsData();
 
 
 
@@ -92,6 +93,8 @@ private:
 	std::string outputFilename_;
 
 	std::vector<uint8_t> outBuffer_;
+
+	uint32_t cursor_;
 
 
 	// TODO: add offsets to start of headers, sections, data, etc... to this class 

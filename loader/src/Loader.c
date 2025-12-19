@@ -5,7 +5,6 @@
 #include <windows.h>
 
 
-
 // NOTE: this is the function that would be called by a netsvcs svchost.exe process.
 // For testing purposes, we will just call it through LoaderDll's DllMain function using CreateThread
 //int startEngine()
@@ -20,11 +19,13 @@ DWORD WINAPI startEngine(LPVOID lpParam)
 //int loadAXE()
 int loadAxeFromDisk()
 {
+	MessageBoxA(NULL, "inside loadaxefromdisk", "Debug", MB_OK);
 	//char* targetAxe = "/path/to/targetAxe";
-	char* targetAxe = "engine.axe";
+	char* targetAxe = "C:\\Users\\Connor\\Documents\\Code\\C++\\adrenochrome\\x64\\Release\\engine.axe"; 
 	HANDLE hFile = CreateFileA(targetAxe, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hFile == INVALID_HANDLE_VALUE)
 	{
+		MessageBoxA(NULL, "invalid handle value", "Debug", MB_OK);
 		// TODO: throw helpful error
 		return 1;
 	}
@@ -33,6 +34,7 @@ int loadAxeFromDisk()
 	if (dwLength == INVALID_FILE_SIZE || dwLength == 0)
 	{
 		// TODO: throw helpful error
+		MessageBoxA(NULL, "invalid filesize", "Debug", MB_OK);
 		return 1;
 	}
 
@@ -40,6 +42,7 @@ int loadAxeFromDisk()
 	if (!lpBuffer)
 	{
 		// TODO: throw helpful error
+		MessageBoxA(NULL, "invalid heapalloc", "Debug", MB_OK);
 		return 1;
 	}
 
@@ -51,6 +54,7 @@ int loadAxeFromDisk()
 	if (!ReadFile(hFile, lpBuffer, dwLength, &dwBytesRead, NULL))
 	{
 		// TODO: throw helpful error
+		MessageBoxA(NULL, "invalid readfile", "Debug", MB_OK);
 		return 1;
 	}
 
@@ -66,6 +70,7 @@ void loadAxe(LPVOID lpBuffer, DWORD dwLength) // TODO: dwLength not needed?
 	// ULONG_PTR baseAddress = VirtualAlloc(NULL, dwLength, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
 	// TODO: manually map here
 
+	MessageBoxA(NULL, "inside loadAxe", "Debug", MB_OK);
 	PAXE_HEADER header = (PAXE_HEADER)lpBuffer;
 
 
@@ -74,17 +79,24 @@ void loadAxe(LPVOID lpBuffer, DWORD dwLength) // TODO: dwLength not needed?
 	PAXE_SECTION pSection = (PAXE_SECTION)((ULONG_PTR)lpBuffer + sizeof(AXE_HEADER));
 
 	size_t totalSize = 0; // sum of section sizes
-	for (int i = 0; i < header->NumberOfSections; ++i)
+	totalSize += sizeof(AXE_HEADER);
+
+	for (int i = 0; i < header->NumberOfSections; ++i, ++pSection)
 	{
 		//totalSize += sections[i].Size;
 		totalSize += pSection->Size;
 	}
+
+	char dbuf[128];
+	wsprintfA(dbuf, "totalSize = %lu, SizeOfImage = %lu", totalSize, header->SizeOfImage);
+	MessageBoxA(NULL, dbuf, "Debug", MB_OK);
 
 	//BYTE* baseAddress = (BYTE*)VirtualAlloc(NULL, header->SizeOfSections, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 	//BYTE* baseAddress = (BYTE*)VirtualAlloc(NULL, totalSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 	ULONG_PTR baseAddress = (ULONG_PTR)VirtualAlloc(NULL, totalSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 	if (baseAddress == NULL)
 	{
+		MessageBoxA(NULL, "bad virtualalloc", "Debug", MB_OK);
 		// TODO: throw error? 
 		return;
 	}
@@ -100,6 +112,11 @@ void loadAxe(LPVOID lpBuffer, DWORD dwLength) // TODO: dwLength not needed?
 		dstPtr += pSection->Size;
 	}
 	ULONG_PTR entryAddress = (ULONG_PTR)(baseAddress + header->AddressOfEntryPoint);
+
+	MessageBoxA(NULL, "calling entry address", "Debug", MB_OK);
+	char buf[128];
+	wsprintfA(buf, "base=%p entry=%d", baseAddress, header->AddressOfEntryPoint);
+	MessageBoxA(NULL, buf, "Debug", MB_OK);
 
 	// Jump to entry point (first section start)
 	((void(*)(void))entryAddress)(); // TODO: typedef this 
