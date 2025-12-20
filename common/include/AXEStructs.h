@@ -6,7 +6,7 @@
 
 
 // TODO: need to add #pragma pack(push, 1) and #pragma pack(pop) ? 
-
+#pragma pack(push, 1)
 typedef struct _AXE_HEADER {
     // TODO: add default constructor for this? 
 
@@ -53,11 +53,11 @@ typedef struct _AXE_IMPORT {
 // TODO: (not implemented, optional) 
 typedef struct _AXE_RELOCATION
 {
-    DWORD sectionIndex;  // which section this relocation applies to
+    DWORD sectionIndex;  // which section this relocation applies to // TODO: this should be a WORD
     DWORD offset;        // offset inside section to patch
     DWORD type;          // e.g., 32-bit or 64-bit relocation
 } AXE_RELOCATION, *PAXE_RELOCATION;
-
+#pragma pack(pop)
 
 
 #endif

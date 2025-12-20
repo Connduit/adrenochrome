@@ -1,5 +1,6 @@
 #include "Builder.h"
 #include "AxeConfig.h"
+#include "PEStructs.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -67,6 +68,13 @@ void AdrenochromeBuilder::loadFile(std::string& path)
 	{
 		// TODO: throw helpful error
 	}
+
+	// TODO: put in deconstructor (need to make below member vars) 
+	//UnmapViewOfFile(lpView);
+	//CloseHandle(hMap);
+	//CloseHandle(hFile);
+
+
 }
 
 void AdrenochromeBuilder::initializeContext() // TODO: rename to initializeHeader? 
@@ -99,7 +107,7 @@ void AdrenochromeBuilder::initializeContext() // TODO: rename to initializeHeade
 		//ctx_.axeHeader.NumberOfSections++;
 	}
 	ctx_.axeHeader.NumberOfSections = ctx_.axeSections.size(); // TODO: this is better? 
-	updateHeader();
+	//updateHeader();
 
 
 }
@@ -129,6 +137,8 @@ void AdrenochromeBuilder::populateContext()
 
 	WORD nSections = pNtHeaders->FileHeader.NumberOfSections;
 	PIMAGE_SECTION_HEADER pSectionHeader = IMAGE_FIRST_SECTION(pNtHeaders);
+
+	// Populate AXE SectionHeader
 	for (USHORT i = 0; i < nSections; ++i, ++pSectionHeader)
 	{
 		std::string sectionName = reinterpret_cast<char*>(pSectionHeader->Name);
@@ -139,85 +149,117 @@ void AdrenochromeBuilder::populateContext()
 
 		if (iter != ctx_.axeSections.end())
 		{
+			// TODO: this should be changed to VirtualSize? SizeOfRawData gets the VirtualSize rounded up to the nearest page (4kb)
+			// or maybe keep at SizeOfRawData to give us a little bit of a buffer? (probs not needed tho)
+			//DWORD VirtualSize = pSectionHeader->Misc.VirtualSize;
 			DWORD SizeOfRawData = pSectionHeader->SizeOfRawData;
 			iter->Offset = cursor_;
-			iter->Size = SizeOfRawData;
+			iter->Size = SizeOfRawData; // TODO: is size of raw data correct here? 
 			cursor_ += iter->Size;
 		}
 	}
 
-	updateSectionHeaders();
-	calculateEntryPoint();
-	updateHeader(); // TODO: move this into the calculateEntryPoint() function? 
+	//updateSectionHeaders();
+	//calculateEntryPoint();
+	//updateHeader(); // TODO: move this into the calculateEntryPoint() function? 
 	
+	//updateSectionsData();
+
+	//updateHeader();
+
+	// TODO: relocs
+
+	// relocRVA = block.VirtualAddress + entry.Offset;
+	// section.VirtualAddress = IMAGE_SECTION_HEADER.VirtualAddress
+	// sectionOffsetInAXE = fileoffset in axe file where corresponding section is
+	// axeOffset = absolute offset relative to the axe image base? // NOTE: this is the "relocationDelta?"
+
+	//axeOffset = sectionOffsetInAXE + (relocRVA - section.VirtualAddress);
+
+
+	
+	//
+	ULONG_PTR relocationDelta = rawImageBase_ - pNtHeaders->OptionalHeader.ImageBase; 
+	DWORD offsetIntoSection = 0; 
+
+	PIMAGE_DATA_DIRECTORY pRelocDir = &pNtHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC];
+
+	if (pRelocDir->Size)
+	{
+		// TODO: add this to be 100% sure we've gone through all the blocks
+		// BYTE* relocEnd = rawImageBase_ + relocSection.PointerToRawData + relocSection.SizeOfRawData;
+		// for (; (BYTE*)relocBlock < relocEnd; relocBlock = (PIMAGE_BASE_RELOCATION)((BYTE*)relocBlock + relocBlock->SizeOfBlock))
+
+
+
+		PIMAGE_BASE_RELOCATION relocBlock = (PIMAGE_BASE_RELOCATION)(rawImageBase_+ Rva2Offset(pRelocDir->VirtualAddress));
+		// baseAddressBuffer = (baseAddress + ((PIMAGE_DATA_DIRECTORY)pRelocDir)->VirtualAddress);
+		// and we itterate through all entries...
+		// NOTE: we can do this because windows api says the IMAGE_BASE_RELOCATION blocks are terminated
+		// by a NULL relocation block, meaning SizeOfBlock will be 0 when we want to stop looking/relocating... 
+		// apparently this isn't always 100% true? 
+		for (; relocBlock->SizeOfBlock; relocBlock = (PIMAGE_BASE_RELOCATION)((ULONG_PTR)relocBlock + relocBlock->SizeOfBlock))
+		{
+			// if (relocBlock->SizeOfBlock == 0) break; // optional safety
+
+			// uiValueA = the VA for this relocation block
+			//iatAddress = (baseAddress + ((PIMAGE_BASE_RELOCATION)relocBlock)->VirtualAddress);
+			ULONG_PTR relocBlockBase = (ULONG_PTR)(rawImageBase_ + Rva2Offset(relocBlock->VirtualAddress)); 
+
+			// uiValueB = number of entries in this relocation block
+			// TODO:
+			ULONG numRelocs = (((PIMAGE_BASE_RELOCATION)relocBlock)->SizeOfBlock - sizeof(IMAGE_BASE_RELOCATION)) / sizeof(IMAGE_RELOC); // TODO: should this be DWORD?
+			// rawImageBaseBuffer = (((PIMAGE_BASE_RELOCATION)baseAddressBuffer)->SizeOfBlock - sizeof(IMAGE_BASE_RELOCATION)) / sizeof(IMAGE_RELOC);
+
+			// uiValueD is now the first entry in the current relocation block
+			//sizeofRawData = (ULONG_PTR)((ULONG_PTR)relocBlock + sizeof(IMAGE_BASE_RELOCATION));
+			PIMAGE_RELOC pReloc = (PIMAGE_RELOC)((ULONG_PTR)relocBlock + sizeof(IMAGE_BASE_RELOCATION)); // NOTE: this is the specific relocation entry
+
+			// we itterate through all the entries in the current block...
+			for (ULONG i = 0; i < numRelocs; ++i, ++pReloc)
+			{
+				// TODO: 
+				//BOOL keepSec = keepSection(relocBlockBase + pReloc->offset);
+				std::string sectionName = keepSection(relocBlockBase + pReloc->offset);
+				if (sectionName.size() > 0)
+				{
+					// apply/store relocs
+
+					std::vector<AXE_SECTION>::iterator iter = std::find_if(ctx_.axeSections.begin(), ctx_.axeSections.end(),
+						[&sectionName](const AXE_SECTION& s) { return std::string(s.Name) == sectionName; });
+
+					if (iter != ctx_.axeSections.end())
+					{
+						DWORD index = static_cast<DWORD>(std::distance(ctx_.axeSections.begin(), iter));
+						AXE_RELOCATION relocAxe{};
+						relocAxe.sectionIndex = index;
+						relocAxe.offset = pReloc->offset; // offset within the section
+						relocAxe.type = pReloc->type;
+						ctx_.axeRelocations.push_back(relocAxe);
+					}
+
+				}
+				else
+				{
+					std::cout << "relocation found inside non idea section" << std::endl;
+				}
+			}
+		}
+
+		//updateRelocations();
+	}
+	// TODO: imports
+
+
+	cursor_ = 0;
+	updateHeader();
+	cursor_ = sizeof(AXE_HEADER);
+	updateSectionHeaders();
+	cursor_ =  sizeof(AXE_HEADER) + ctx_.axeSections.size() * sizeof(AXE_SECTION);
 	updateSectionsData();
 
-	updateHeader();
-
-	/*
-	// TODO: relocs
-	for (IMAGE_BASE_RELOCATION* relBlock = firstRelBlock; relBlock->VirtualAddress != 0; relBlock = nextRelBlock) {
-
-	DWORD pageRVA = relBlock->VirtualAddress;
-	WORD* entries = (WORD*)(relBlock + 1);
-	int numEntries = (relBlock->SizeOfBlock - sizeof(IMAGE_BASE_RELOCATION)) / sizeof(WORD);
-
-	for (int j = 0; j < numEntries; j++) {
-		WORD entry = entries[j];
-		DWORD type = entry >> 12;
-		DWORD offset = entry & 0xFFF;
-
-		axeRelocs[relocCounter].sectionIndex = findSectionForRVA(pageRVA + offset); 
-		axeRelocs[relocCounter].offset = (pageRVA + offset) - sectionRVA;
-		axeRelocs[relocCounter].type = type;
-		relocCounter++;
-	}
-  }
-
-	*/
-
-	/*
-	// TODO: imports
-	for (int i = 0; importDescriptors[i].Name != 0; i++)
-	{
-		PIMAGE_IMPORT_DESCRIPTOR desc = &importDescriptors[i];
-		char* dllName = (char*)(baseAddress + desc->Name);
-
-		PIMAGE_THUNK_DATA thunk = (PIMAGE_THUNK_DATA)(baseAddress + desc->OriginalFirstThunk); int funcIndex = 0;
-
-		while (thunk->u1.AddressOfData != 0)
-		{
-			AXE_IMPORT* imp = &axeImports[importCounter++];
-
-			imp->moduleName = dllName;
-
-			if (thunk->u1.Ordinal & IMAGE_ORDINAL_FLAG)
-			{
-				imp->functionName = NULL;          // you can store ordinal if needed
-			}
-			else
-			{
-				PIMAGE_IMPORT_BY_NAME ibn = (PIMAGE_IMPORT_BY_NAME)(baseAddress + thunk->u1.AddressOfData);
-				imp->functionName = (char*)ibn->Name;
-			}
-
-			if (thunk->u1.ForwarderString != 0)
-			{
-				imp->forwarderName = (char*)(baseAddress + thunk->u1.ForwarderString);
-			}
-			else
-			{
-				imp->forwarderName = NULL;
-			}
-
-			imp->patchAddress = NULL;  // set later when loader maps
-			thunk++;
-		}
-	}
-	*/
-
-	// ctx_->pAxeImports = axeImports;
-	//
+	updateRelocations();
+	ctx_.axeHeader.SizeOfImage = cursor_;
 }
 
 void AdrenochromeBuilder::updateHeader()
@@ -236,18 +278,17 @@ void AdrenochromeBuilder::updateSectionHeaders()
 	// TODO: do this check: if (!outfileStream_) 
 
 	//outfileStream_.seekp(sizeof(ctx_.axeHeader), std::ios::beg);
+	//cursor_ = sizeof(AXE_HEADER);
 	outfileStream_.seekp(sizeof(AXE_HEADER), std::ios::beg);
 	for (unsigned int i = 0; i < ctx_.axeSections.size(); ++i)
 	{
 		outfileStream_.write(reinterpret_cast<const char*>(&ctx_.axeSections[i]), sizeof(AXE_SECTION));
+		//cursor_ += sizeof(AXE_SECTION); // TODO: uncomment?
 	}
 }
 
 void AdrenochromeBuilder::updateSectionsData()
 {
-
-	// TODO: messing up here somehow, overwritting a port of the data
-	// it is missing 1024 bytes from the end of the text section
 	
 	PIMAGE_NT_HEADERS pNtHeaders = (PIMAGE_NT_HEADERS)(rawImageBase_ + ((PIMAGE_DOS_HEADER)rawImageBase_)->e_lfanew);
 	PIMAGE_SECTION_HEADER pSectionHeader = IMAGE_FIRST_SECTION(pNtHeaders);
@@ -276,7 +317,90 @@ void AdrenochromeBuilder::updateSectionsData()
 		}
 	}
 
-	ctx_.axeHeader.SizeOfImage = cursor_;
+	//ctx_.axeHeader.SizeOfImage = cursor_;
+}
+
+void AdrenochromeBuilder::updateRelocations()
+{	
+	if (outfileStream_)
+	{
+		for (size_t i = 0; i < ctx_.axeRelocations.size(); ++i)
+		{
+			outfileStream_.seekp(cursor_, std::ios::beg);
+			outfileStream_.write(reinterpret_cast<const char*>(&ctx_.axeRelocations[i]), sizeof(AXE_RELOCATION));
+			cursor_ += sizeof(AXE_RELOCATION);
+		}
+	}
+}
+
+//BOOL AdrenochromeBuilder::keepSection(ULONG_PTR addr)
+std::string AdrenochromeBuilder::keepSection(ULONG_PTR addr)
+{	
+
+	PIMAGE_NT_HEADERS pNtHeaders = (PIMAGE_NT_HEADERS)(rawImageBase_ + ((PIMAGE_DOS_HEADER)rawImageBase_)->e_lfanew);
+	WORD nSections = pNtHeaders->FileHeader.NumberOfSections;
+	PIMAGE_SECTION_HEADER pSectionHeader = IMAGE_FIRST_SECTION(pNtHeaders);
+	DWORD dwRva = (DWORD)(addr - rawImageBase_);
+
+	// find what section the entry point is in 
+	for (WORD i = 0; i < nSections; ++i, ++pSectionHeader)
+	{
+		if (dwRva >= pSectionHeader->PointerToRawData && 
+			dwRva < pSectionHeader->PointerToRawData + pSectionHeader->Misc.VirtualSize)
+		{
+
+			std::string sectionName(reinterpret_cast<const char*>(pSectionHeader->Name), strnlen(reinterpret_cast<const char*>(pSectionHeader->Name), 8)); // TODO: don't hard code length? 
+			//std::string sectionName = reinterpret_cast<char*>(pSectionHeader->Name);
+
+			std::vector<AXE_SECTION>::iterator iter = std::find_if(ctx_.axeSections.begin(), ctx_.axeSections.end(),
+				[&sectionName](const AXE_SECTION& s) { return std::string(s.Name) == sectionName; });
+			// axeSection = ctx_.axeSections[TODO_INDEX]; // TODO_INDEX gets us 
+
+			if (iter != ctx_.axeSections.end())
+			{
+				// TODO: 
+				// or just apply/save off AXE_RELOCATION here?  
+				return sectionName;
+				//return TRUE;
+			}
+		}
+	}
+
+	return std::string();
+	//return FALSE;
+}
+
+DWORD AdrenochromeBuilder::Rva2Offset(DWORD dwRva)
+{
+	WORD wIndex = 0; // TODO: rename to something like sIndex or sectionIndex maybe?
+
+	PIMAGE_NT_HEADERS pNtHeaders = (PIMAGE_NT_HEADERS)(rawImageBase_ + ((PIMAGE_DOS_HEADER)rawImageBase_)->e_lfanew);
+
+	// pointer to the first section header
+	// address of first section header = (address to the OptionalHeader) + SizeOfOptionalHeader
+	// TODO: use IMAGE_FIRST_SECTION to get start address based on the PE header?
+	PIMAGE_SECTION_HEADER pSectionHeader = IMAGE_FIRST_SECTION(pNtHeaders);
+
+
+	// Check if RVA points to somewhere before the first section
+	//if (dwRva < pSectionHeader[0].PointerToRawData)
+	if (dwRva < pSectionHeader->PointerToRawData)
+	{
+		return dwRva;
+	}
+
+	//for (wIndex = 0 ; wIndex < pNtHeaders->FileHeader.NumberOfSections; ++wIndex, ++pSectionHeader)
+	for (wIndex = 0 ; wIndex < pNtHeaders->FileHeader.NumberOfSections; ++wIndex)
+	{   
+		// if the RVA is within the current SectionHeader structure (VirtualAddress to VirtualAddress + SizeOfRawData) 
+		if (dwRva >= pSectionHeader[wIndex].VirtualAddress && 
+			dwRva < (pSectionHeader[wIndex].VirtualAddress + pSectionHeader[wIndex].SizeOfRawData))           
+		{
+			return (dwRva - pSectionHeader[wIndex].VirtualAddress + pSectionHeader[wIndex].PointerToRawData);
+		}
+	}
+	return 0;
+
 }
 
 //ULONG_PTR AdrenochromeBuilder::calculateEntryPoint()
@@ -293,6 +417,7 @@ void AdrenochromeBuilder::calculateEntryPoint()
 	// find what section the entry point is in 
 	for (WORD i = 0; i < nSections; ++i, ++pSectionHeader)
 	{
+		// TODO: this needs to be using pSectionHeader->PointerToRawData since rawImageBase_ is based off of on disk alignment 
 		if (AddressOfEntryPoint >= pSectionHeader->VirtualAddress && 
 			AddressOfEntryPoint < pSectionHeader->VirtualAddress + pSectionHeader->Misc.VirtualSize)
 		{

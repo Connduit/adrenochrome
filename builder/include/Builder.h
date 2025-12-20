@@ -62,17 +62,21 @@ private:
 	void updateHeader();
 	void updateSectionHeaders();
 	void updateSectionsData();
+	void updateRelocations();
+
+	// 
+	//BOOL keepSection(ULONG_PTR addr);
+	// return the name of section that corresponds with the addr
+	std::string keepSection(ULONG_PTR addr);
+
+	//
+	DWORD Rva2Offset(DWORD dwRva);
+	DWORD Offset2Rva(DWORD dwOffset);
 
 
 
 	//ULONG_PTR calculateEntryPoint(); // TODO: rename to calculateAddressOfEntryPoint() ? 
 	void calculateEntryPoint(); // TODO: rename to calculateAddressOfEntryPoint() ? 
-
-	void writeToStream(AXE_HEADER header); // update header 
-	void writeToStream(AXE_SECTION section); // update section
-	void writeToStream(std::vector<AXE_SECTION> sections); // update sections
-	// void writeToStream( TODO ); // update/write section contents
-
 
 	void encrypt();
 	void compress();
@@ -82,7 +86,10 @@ private:
 	bool createAXE();
 	bool createAXE(std::string path, std::vector<uint8_t>& buffer); // TODO: typedef vector<uint8_t>
 
-	ULONG_PTR rawImageBase_; // TODO: rename to 
+	// NOTE: since we're using MapViewOfFile to get this var
+	// we must treat it as the same layout as when the pe is on 
+	// the disk (and not virtualalloc'd in memory)
+	ULONG_PTR rawImageBase_; 
 	//ULONG_PTR baseAddress_;  // TODO: ? 
 	//ULONG_PTR currentAddress_; // NOTE: the current address ("location") we're writing to (within the baseaddress)
 	AXE_BUILDER_CONTEXT ctx_;
@@ -94,6 +101,7 @@ private:
 
 	std::vector<uint8_t> outBuffer_;
 
+	// Pointer to where we're writing to in our outfileStream
 	uint32_t cursor_;
 
 

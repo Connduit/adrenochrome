@@ -251,7 +251,7 @@ BOOL applyRelocations(PLOADER_CONTEXT ctx)
 	// TODO: add better comment
 	if (pRelocDir->Size)
 	{
-		PIMAGE_BASE_RELOCATION relocBlock = (PIMAGE_BASE_RELOCATION)(ctx->baseAddress + ((PIMAGE_DATA_DIRECTORY)pRelocDir)->VirtualAddress);
+		PIMAGE_BASE_RELOCATION relocBlock = (PIMAGE_BASE_RELOCATION)(ctx->baseAddress + ((PIMAGE_DATA_DIRECTORY)pRelocDir)->VirtualAddress); // TODO: this might cause future problems? 
 		// baseAddressBuffer = (baseAddress + ((PIMAGE_DATA_DIRECTORY)pRelocDir)->VirtualAddress);
 
 		// and we itterate through all entries...

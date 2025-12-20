@@ -5,6 +5,9 @@
 
 #include <vector>
 
+
+// TODO: Position Independent AXE File Structure
+
 // TODO: maybe turn this into just an "in-memory" version? 
 typedef struct _AXE_BUILDER_CONTEXT {
     AXE_HEADER axeHeader;
