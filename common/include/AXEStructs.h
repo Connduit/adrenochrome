@@ -39,7 +39,7 @@ typedef struct _AXE_SECTION {
     // DWORD RVA;               // where to map it (optional)? 
     DWORD Size;              // virtual size
     DWORD Offset;            // offset in AXE file
-    ULONG_PTR memoryAddress; // ULONG_PTR? // needed by the custom loader 
+    ULONG_PTR memoryAddress; // ULONG_PTR? // needed by the custom loader. this is equivalent to PE.IMAGE_SECTION_HEADER.VirtualAddress
     // DWORD Characteristics;   // RWX flags (technically optional)
 } AXE_SECTION, *PAXE_SECTION;
 

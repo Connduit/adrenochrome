@@ -1,5 +1,5 @@
 #include "Loader.h"
-#include "AXEStructs.h"
+#include "AxeLoaderContext.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -51,7 +51,9 @@ int loadAxeFromDisk()
 	// NOTE: here is where we're actually writing the contents of the targetDll
 	// from the disk into the memory we just allocated for it on the Heap 
 
-	if (!ReadFile(hFile, lpBuffer, dwLength, &dwBytesRead, NULL))
+	// NOTE: ReadFile() copies heap into ram but that doesn't mean the image 
+	// is mapped/loaded yet
+	if (!ReadFile(hFile, lpBuffer, dwLength, &dwBytesRead, NULL)) 
 	{
 		// TODO: throw helpful error
 		MessageBoxA(NULL, "invalid readfile", "Debug", MB_OK);
@@ -71,8 +73,24 @@ void loadAxe(LPVOID lpBuffer, DWORD dwLength) // TODO: dwLength not needed?
 	// TODO: manually map here
 
 	MessageBoxA(NULL, "inside loadAxe", "Debug", MB_OK);
-	PAXE_HEADER header = (PAXE_HEADER)lpBuffer;
 
+	AXE_LOADER_CONTEXT ctxStruct;   
+	PAXE_LOADER_CONTEXT ctx = &ctxStruct; 
+
+
+	PAXE_HEADER header = (PAXE_HEADER)lpBuffer;
+	ctx->axeHeader = *header;
+
+	ctx->axeSections = (PAXE_SECTION*)((ULONG_PTR)lpBuffer + sizeof(AXE_HEADER));
+
+	// ctx->axeImports = (AXE_IMPORT*)(ctx->axeSections + ctx->axeHeader.NumberOfSections);
+
+	AXE_SECTION* relocSection = &ctx->axeSections[ctx->axeHeader.NumberOfSections - 1];
+	ctx->axeRelocations = (AXE_RELOCATION*)((ULONG_PTR)lpBuffer + relocSection->Offset);
+
+	// BYTE* textData = lpBuffer + ctx->axeSections[0].Offset;
+	// BYTE* rdataData = lpBuffer + ctx->axeSections[1].Offset;
+	// BYTE* dataData = lpBuffer + ctx->axeSections[2].Offset;
 
 
 	// or do this:
@@ -84,16 +102,17 @@ void loadAxe(LPVOID lpBuffer, DWORD dwLength) // TODO: dwLength not needed?
 	for (int i = 0; i < header->NumberOfSections; ++i, ++pSection)
 	{
 		//totalSize += sections[i].Size;
+		//ctx.axeSections = pSection;
 		totalSize += pSection->Size;
 	}
 
 	char dbuf[128];
-	wsprintfA(dbuf, "totalSize = %lu, SizeOfImage = %lu", totalSize, header->SizeOfImage);
+	wsprintfA(dbuf, "totalSize = %lu, SizeOfImage = %lu", totalSize, header->SizeOfImage); // these should match? 
 	MessageBoxA(NULL, dbuf, "Debug", MB_OK);
 
 	//BYTE* baseAddress = (BYTE*)VirtualAlloc(NULL, header->SizeOfSections, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 	//BYTE* baseAddress = (BYTE*)VirtualAlloc(NULL, totalSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
-	ULONG_PTR baseAddress = (ULONG_PTR)VirtualAlloc(NULL, totalSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+	ULONG_PTR baseAddress = (ULONG_PTR)VirtualAlloc(NULL, header->SizeOfImage, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 	if (baseAddress == NULL)
 	{
 		MessageBoxA(NULL, "bad virtualalloc", "Debug", MB_OK);
@@ -101,16 +120,20 @@ void loadAxe(LPVOID lpBuffer, DWORD dwLength) // TODO: dwLength not needed?
 		return;
 	}
 
-	// TODO: check if baseAddress != NULL
-	PBYTE dstPtr = (BYTE*)baseAddress;
 
 	pSection = (PAXE_SECTION)((ULONG_PTR)lpBuffer + sizeof(AXE_HEADER));
 	for (int i = 0; i < header->NumberOfSections; ++i, ++pSection)
 	{
 		PBYTE srcPtr = (BYTE*)lpBuffer + pSection->Offset;
+		PBYTE dstPtr = baseAddress + pSection->memoryAddress; // memoryAddress = the RVA within the AXE image
 		memcpy(dstPtr, srcPtr, pSection->Size);
 		dstPtr += pSection->Size;
 	}
+
+	// TODO: relocations are required... unless we provide a baseaddress in the VirtualAlloc function
+
+
+	// TODO: bad entry address
 	ULONG_PTR entryAddress = (ULONG_PTR)(baseAddress + header->AddressOfEntryPoint);
 
 	MessageBoxA(NULL, "calling entry address", "Debug", MB_OK);

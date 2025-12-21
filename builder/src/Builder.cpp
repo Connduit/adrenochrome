@@ -152,6 +152,7 @@ void AdrenochromeBuilder::populateContext()
 			// TODO: this should be changed to VirtualSize? SizeOfRawData gets the VirtualSize rounded up to the nearest page (4kb)
 			// or maybe keep at SizeOfRawData to give us a little bit of a buffer? (probs not needed tho)
 			//DWORD VirtualSize = pSectionHeader->Misc.VirtualSize;
+			// TODO: "trim" off alignment bytes from the SizeOfRawData/VirtualSize
 			DWORD SizeOfRawData = pSectionHeader->SizeOfRawData;
 			iter->Offset = cursor_;
 			iter->Size = SizeOfRawData; // TODO: is size of raw data correct here? 
@@ -248,18 +249,38 @@ void AdrenochromeBuilder::populateContext()
 
 		//updateRelocations();
 	}
+
+	AXE_SECTION& relocSection = *(ctx_.axeSections.end() - 1);
+	AXE_SECTION& sectionBeforeReloc = *(ctx_.axeSections.end() - 2);
+	// TODO: use .back() instead?
+	//AXE_SECTION& relocSection = ctx_.axeSections.back();
+	//AXE_SECTION& sectionBeforeReloc = ctx_.axeSections[ctx_.axeSections.size() - 2];
+
+	relocSection.Offset = sectionBeforeReloc.Offset + sectionBeforeReloc.Size;
+	//relocSection.Offset = sizeof(AXE_HEADER) + ctx_.axeSections.size() * sizeof(AXE_SECTION) + sectionBeforeReloc.Offset + sectionBeforeReloc.Size;
+	relocSection.Size = ctx_.axeRelocations.size() * sizeof(AXE_RELOCATION); // TODO: this is wrong? 
+
+
+
+	// if relocations exist, add a relocation section to ctx_.axeSections
+	// if (ctx_.axeRelocations.size()) { }
+
+
+
+
 	// TODO: imports
 
 
 	cursor_ = 0;
 	updateHeader();
-	cursor_ = sizeof(AXE_HEADER);
+	cursor_ += sizeof(AXE_HEADER);
 	updateSectionHeaders();
-	cursor_ =  sizeof(AXE_HEADER) + ctx_.axeSections.size() * sizeof(AXE_SECTION);
+	cursor_ +=  ctx_.axeSections.size() * sizeof(AXE_SECTION);
 	updateSectionsData();
 
 	updateRelocations();
 	ctx_.axeHeader.SizeOfImage = cursor_;
+	updateHeader();
 }
 
 void AdrenochromeBuilder::updateHeader()
@@ -302,7 +323,9 @@ void AdrenochromeBuilder::updateSectionsData()
 		std::vector<AXE_SECTION>::iterator iter = std::find_if(ctx_.axeSections.begin(), ctx_.axeSections.end(), 
 			[&sectionName](const AXE_SECTION& s) { return std::string(s.Name) == sectionName; });
 
-		if (iter != ctx_.axeSections.end())
+		// NOTE: we don't want to write the exact reloc data from the pe,
+		// we want to use our own structure for the data
+		if (iter != ctx_.axeSections.end() && sectionName != ".reloc")
 		{
 
 			PBYTE srcPtr = (PBYTE)(rawImageBase_ + pSectionHeader->PointerToRawData);
@@ -321,7 +344,7 @@ void AdrenochromeBuilder::updateSectionsData()
 }
 
 void AdrenochromeBuilder::updateRelocations()
-{	
+{
 	if (outfileStream_)
 	{
 		for (size_t i = 0; i < ctx_.axeRelocations.size(); ++i)

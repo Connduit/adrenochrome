@@ -16,4 +16,19 @@ typedef struct _AXE_BUILDER_CONTEXT {
     std::vector<AXE_RELOCATION> axeRelocations;
     // Section Data Blobs
 } AXE_BUILDER_CONTEXT, *PAXE_BUILDER_CONTEXT;
+
+/*
+AXE_HEADER
+AXE_SECTION.text
+AXE_SECTION.rdata
+AXE_SECTION.data
+AXE_SECTION.reloc
+AXE_IMPORT // NULL
+.text Data
+.rdata Data
+.data Data
+.reloc AXE_RELOCATION
+*/
+
+
 #endif
