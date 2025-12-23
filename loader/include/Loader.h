@@ -16,6 +16,8 @@ void loadAxe(LPVOID lpBuffer, DWORD dwLength);
 // engine.dll is embedded in a PE section of loader.dll
 void loadFromSection();
 
+int loadAxeFromDisk();
+
 // engine.dll is encrypted/compressed on the disk (as a .bin/.data file?)
 void loadFromDisk();
 

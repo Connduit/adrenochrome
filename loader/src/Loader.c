@@ -81,7 +81,7 @@ void loadAxe(LPVOID lpBuffer, DWORD dwLength) // TODO: dwLength not needed?
 	PAXE_HEADER header = (PAXE_HEADER)lpBuffer;
 	ctx->axeHeader = *header;
 
-	ctx->axeSections = (PAXE_SECTION*)((ULONG_PTR)lpBuffer + sizeof(AXE_HEADER));
+	ctx->axeSections = (PAXE_SECTION)((ULONG_PTR)lpBuffer + sizeof(AXE_HEADER));
 
 	// ctx->axeImports = (AXE_IMPORT*)(ctx->axeSections + ctx->axeHeader.NumberOfSections);
 
@@ -124,8 +124,10 @@ void loadAxe(LPVOID lpBuffer, DWORD dwLength) // TODO: dwLength not needed?
 	pSection = (PAXE_SECTION)((ULONG_PTR)lpBuffer + sizeof(AXE_HEADER));
 	for (int i = 0; i < header->NumberOfSections; ++i, ++pSection)
 	{
-		PBYTE srcPtr = (BYTE*)lpBuffer + pSection->Offset;
-		PBYTE dstPtr = baseAddress + pSection->memoryAddress; // memoryAddress = the RVA within the AXE image
+		PBYTE srcPtr = (PBYTE)lpBuffer + pSection->Offset;
+		// memoryAddress = the RVA within the AXE image
+		// NOTE: what's stopping us from just using the Offset field as an RVA instead?
+		PBYTE dstPtr = (PBYTE)(baseAddress + pSection->memoryAddress); 
 		memcpy(dstPtr, srcPtr, pSection->Size);
 		dstPtr += pSection->Size;
 	}
@@ -144,7 +146,7 @@ void loadAxe(LPVOID lpBuffer, DWORD dwLength) // TODO: dwLength not needed?
 	// Jump to entry point (first section start)
 	((void(*)(void))entryAddress)(); // TODO: typedef this 
 
-	return 0;
+	return;
 
 }
 

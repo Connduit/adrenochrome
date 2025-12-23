@@ -3,7 +3,7 @@
 
 #include "AXEStructs.h"
 
-#define BASE_ADDRESS 0x180000000
+#define BASE_ADDRESS 0x180000000 // TODO: remove? we always address returned from VirtualAlloc?
 
 // TODO: maybe turn this into just an "in-memory" version? 
 typedef struct _AXE_LOADER_CONTEXT {

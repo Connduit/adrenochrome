@@ -44,7 +44,7 @@ class AdrenochromeBuilder
 {
 public:
 	AdrenochromeBuilder(); // : baseAddress_() {}
-	//~AdrenochromeBuilder();
+	~AdrenochromeBuilder();
 
 	//static void loadFile(std::string& path);
 	//static void loadFile(LPCWSTR path);
@@ -73,6 +73,8 @@ private:
 	DWORD Rva2Offset(DWORD dwRva);
 	DWORD Offset2Rva(DWORD dwOffset);
 
+	PIMAGE_SECTION_HEADER getPESection(DWORD dwRva);
+	PAXE_SECTION  getAXESection(DWORD dwRva);
 
 
 	//ULONG_PTR calculateEntryPoint(); // TODO: rename to calculateAddressOfEntryPoint() ? 
@@ -84,7 +86,6 @@ private:
 
 	// TODO: rename function?
 	bool createAXE();
-	bool createAXE(std::string path, std::vector<uint8_t>& buffer); // TODO: typedef vector<uint8_t>
 
 	// NOTE: since we're using MapViewOfFile to get this var
 	// we must treat it as the same layout as when the pe is on 
@@ -99,10 +100,16 @@ private:
 	//std::string inputFilename;
 	std::string outputFilename_;
 
-	std::vector<uint8_t> outBuffer_;
-
 	// Pointer to where we're writing to in our outfileStream
 	uint32_t cursor_;
+
+
+	//
+	HANDLE hFile_;
+	HANDLE hMap_;
+	LPVOID lpView_;
+	
+	//
 
 
 	// TODO: add offsets to start of headers, sections, data, etc... to this class 

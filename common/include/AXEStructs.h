@@ -9,16 +9,11 @@
 #pragma pack(push, 1)
 typedef struct _AXE_HEADER {
     // TODO: add default constructor for this? 
-
-
     WORD Magic;             // e.g., 0x58454121 = "AXE!" (NOT MZ) // TODO: rename to e_magic
     //WORD Version;           // Format version
     // WORD  ModuleType;        // Engine = 0, Module = 1, etc.
 
-    //DWORD SizeOfSections;    // TODO: rva to section header instead? 
     DWORD SizeOfImage;       // How much memory to allocate
-    //DWORD SizeOfAxe;       // How much memory to allocate for the axe // optional? this would only be used by the loader
-    //DWORD EntryPointRVA;     // Offset to the entry function inside the image // TODO: rename for consistency. this would only be used by the loader? 
     DWORD AddressOfEntryPoint;   // where to start executing
 
     WORD NumberOfSections;      // Number of sections
@@ -36,7 +31,6 @@ typedef struct _AXE_HEADER {
 
 typedef struct _AXE_SECTION {
     char Name[8];           // name of section (null-padded). technically optional if i decide to hard code section order logic in loader. (hash/obufuscate name)
-    // DWORD RVA;               // where to map it (optional)? 
     DWORD Size;              // virtual size
     DWORD Offset;            // offset in AXE file
     ULONG_PTR memoryAddress; // ULONG_PTR? // needed by the custom loader. this is equivalent to PE.IMAGE_SECTION_HEADER.VirtualAddress

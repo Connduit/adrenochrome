@@ -16,10 +16,38 @@ AdrenochromeBuilder::AdrenochromeBuilder()
 	: 
 	rawImageBase_(0),
 	ctx_(),
-	cursor_(0)
+	cursor_(0),
+	hFile_(nullptr),
+	hMap_(nullptr),
+	lpView_(nullptr)
 	// baseAddress_(0),
 {
 	// LOGGING STUFF?
+}
+
+
+AdrenochromeBuilder::~AdrenochromeBuilder()
+{
+	if (lpView_)
+	{
+		UnmapViewOfFile(lpView_);
+	}
+
+	if (hMap_)
+	{
+		CloseHandle(hMap_);
+	}
+
+	if (hFile_)
+	{
+		CloseHandle(hFile_);
+	}
+
+	if (outfileStream_)
+	{
+		outfileStream_.close();
+	}
+
 }
 
 void AdrenochromeBuilder::build()
@@ -29,28 +57,25 @@ void AdrenochromeBuilder::build()
 	initializeContext();
 	populateContext(); // change function type from void so i can check return type
 
-	outfileStream_.close();
 }
 
 // void AdrenochromeBuilder::loadFile(std::string& path)
 // void AdrenochromeBuilder::loadFile(const std::wstring& path)
 //  TODO: change return type?
-//void AdrenochromeBuilder::loadFile(LPCWSTR path)
 void AdrenochromeBuilder::loadFile(std::string& path)
 {
 	std::filesystem::path p(path);
 	outputFilename_ = p.replace_extension("axe").string();
 
-	//HANDLE hFile = CreateFileW(path, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-	HANDLE hFile = CreateFileA(path.c_str(), GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-	if (hFile == INVALID_HANDLE_VALUE)
+	hFile_ = CreateFileA(path.c_str(), GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (hFile_ == INVALID_HANDLE_VALUE)
 	{
 		// TODO: throw helpful error
 		return;
 	}
 
-	HANDLE hMap = CreateFileMappingW(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
-	if (hMap == NULL)
+	hMap_ = CreateFileMappingW(hFile_, NULL, PAGE_READONLY, 0, 0, NULL);
+	if (hMap_ == NULL)
 	{
 		// TODO: throw helpful error
 		return;
@@ -58,23 +83,16 @@ void AdrenochromeBuilder::loadFile(std::string& path)
 
 	// NOTE: lpView is the baseAddress... TODO: rename var?
 	// TODO: store this var as a class variable?
-	LPVOID lpView = MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0);
+	lpView_ = MapViewOfFile(hMap_, FILE_MAP_READ, 0, 0, 0);
 
-	if (lpView != NULL)
+	if (lpView_ != NULL)
 	{
-		rawImageBase_ = (ULONG_PTR)lpView;
+		rawImageBase_ = (ULONG_PTR)lpView_;
 	}
 	else
 	{
 		// TODO: throw helpful error
 	}
-
-	// TODO: put in deconstructor (need to make below member vars) 
-	//UnmapViewOfFile(lpView);
-	//CloseHandle(hMap);
-	//CloseHandle(hFile);
-
-
 }
 
 void AdrenochromeBuilder::initializeContext() // TODO: rename to initializeHeader? 
@@ -106,7 +124,7 @@ void AdrenochromeBuilder::initializeContext() // TODO: rename to initializeHeade
 
 		//ctx_.axeHeader.NumberOfSections++;
 	}
-	ctx_.axeHeader.NumberOfSections = ctx_.axeSections.size(); // TODO: this is better? 
+	ctx_.axeHeader.NumberOfSections = ctx_.axeSections.size(); // TODO: this is better than incrementing in a for loop?
 	//updateHeader();
 
 
@@ -155,18 +173,11 @@ void AdrenochromeBuilder::populateContext()
 			// TODO: "trim" off alignment bytes from the SizeOfRawData/VirtualSize
 			DWORD SizeOfRawData = pSectionHeader->SizeOfRawData;
 			iter->Offset = cursor_;
-			iter->Size = SizeOfRawData; // TODO: is size of raw data correct here? 
+			iter->Size = SizeOfRawData;
 			cursor_ += iter->Size;
 		}
 	}
 
-	//updateSectionHeaders();
-	//calculateEntryPoint();
-	//updateHeader(); // TODO: move this into the calculateEntryPoint() function? 
-	
-	//updateSectionsData();
-
-	//updateHeader();
 
 	// TODO: relocs
 
@@ -203,7 +214,6 @@ void AdrenochromeBuilder::populateContext()
 		{
 			// if (relocBlock->SizeOfBlock == 0) break; // optional safety
 
-			// uiValueA = the VA for this relocation block
 			//iatAddress = (baseAddress + ((PIMAGE_BASE_RELOCATION)relocBlock)->VirtualAddress);
 			ULONG_PTR relocBlockBase = (ULONG_PTR)(rawImageBase_ + Rva2Offset(relocBlock->VirtualAddress)); 
 
@@ -242,6 +252,7 @@ void AdrenochromeBuilder::populateContext()
 				}
 				else
 				{
+					// TODO: throw real warning here
 					std::cout << "relocation found inside non idea section" << std::endl;
 				}
 			}
@@ -272,6 +283,7 @@ void AdrenochromeBuilder::populateContext()
 
 
 	cursor_ = 0;
+	calculateEntryPoint();
 	updateHeader();
 	cursor_ += sizeof(AXE_HEADER);
 	updateSectionHeaders();
@@ -396,14 +408,8 @@ std::string AdrenochromeBuilder::keepSection(ULONG_PTR addr)
 DWORD AdrenochromeBuilder::Rva2Offset(DWORD dwRva)
 {
 	WORD wIndex = 0; // TODO: rename to something like sIndex or sectionIndex maybe?
-
 	PIMAGE_NT_HEADERS pNtHeaders = (PIMAGE_NT_HEADERS)(rawImageBase_ + ((PIMAGE_DOS_HEADER)rawImageBase_)->e_lfanew);
-
-	// pointer to the first section header
-	// address of first section header = (address to the OptionalHeader) + SizeOfOptionalHeader
-	// TODO: use IMAGE_FIRST_SECTION to get start address based on the PE header?
 	PIMAGE_SECTION_HEADER pSectionHeader = IMAGE_FIRST_SECTION(pNtHeaders);
-
 
 	// Check if RVA points to somewhere before the first section
 	//if (dwRva < pSectionHeader[0].PointerToRawData)
@@ -423,19 +429,71 @@ DWORD AdrenochromeBuilder::Rva2Offset(DWORD dwRva)
 		}
 	}
 	return 0;
+}
+	
+PIMAGE_SECTION_HEADER AdrenochromeBuilder::getPESection(DWORD dwRva)
+{
+	PIMAGE_NT_HEADERS pNtHeaders = (PIMAGE_NT_HEADERS)(rawImageBase_ + ((PIMAGE_DOS_HEADER)rawImageBase_)->e_lfanew);
+	PIMAGE_SECTION_HEADER pSectionHeader = IMAGE_FIRST_SECTION(pNtHeaders);
+	WORD nSections = pNtHeaders->FileHeader.NumberOfSections;
+
+
+	for (WORD i = 0; i < nSections; ++i, ++pSectionHeader)
+	{
+		// TODO: this needs to be using pSectionHeader->PointerToRawData since rawImageBase_ is based off of on disk alignment?
+		if (dwRva >= pSectionHeader->VirtualAddress && 
+			dwRva < pSectionHeader->VirtualAddress + pSectionHeader->Misc.VirtualSize)
+		{
+			std::string sectionName(reinterpret_cast<const char*>(pSectionHeader->Name), strnlen(reinterpret_cast<const char*>(pSectionHeader->Name), 8)); // TODO: don't hard code length? 
+			//std::string sectionName = reinterpret_cast<char*>(pSectionHeader->Name);
+			std::vector<AXE_SECTION>::iterator iter = std::find_if(ctx_.axeSections.begin(), ctx_.axeSections.end(),
+				[&sectionName](const AXE_SECTION& s) { return std::string(s.Name) == sectionName; });
+			// axeSection = ctx_.axeSections[TODO_INDEX]; // TODO_INDEX gets us 
+
+			if (iter != ctx_.axeSections.end())
+			{
+				//offsetIntoSection = AddressOfEntryPoint - pSectionHeader->VirtualAddress; // NOTE: this is the RVA to the entry point relative to the section it's in
+				//ctx_.axeHeader.AddressOfEntryPoint = iter->Offset + offsetIntoSection;
+				return pSectionHeader;
+			}
+		}
+	}
 
 }
 
-//ULONG_PTR AdrenochromeBuilder::calculateEntryPoint()
+PAXE_SECTION AdrenochromeBuilder::getAXESection(DWORD dwRva)
+{
+
+	AXE_SECTION a{};
+	return &a;
+}
+
 void AdrenochromeBuilder::calculateEntryPoint()
 {
+	/*
+	 * DWORD AddressOfEntryPoint = pNtHeaders->OptionalHeader.AddressOfEntryPoint;
+	 * epSection = find_section_ep_is_in(AddressOfEntryPoint);
+	 * rva = AddressOfEntryPoint - epSection->VirtualAddress;
+	 * axeEpSection = find_section_in_axe_that_matches(epSection);
+	 * axeEntryPoint = axeEpSection.Offset + rva;
+	 *
+	 * */
+
 	DWORD offsetIntoSection = 0; 
 
 	PIMAGE_NT_HEADERS pNtHeaders = (PIMAGE_NT_HEADERS)(rawImageBase_ + ((PIMAGE_DOS_HEADER)rawImageBase_)->e_lfanew);
 	DWORD AddressOfEntryPoint = pNtHeaders->OptionalHeader.AddressOfEntryPoint;
 
+	////////////////////////////////////////////////////////////////////////
+	matching_section = getPESection(AddressOfEntryPoint);
+	DWORD rva = AddressOfEntryPoint - matching_section->VirtualAddress; 
+	PAXE_SECTION axeEpSection = getAXESection(); // getAXESection that has the same name as Matching Section
+	ULONG_PTR entryPoint = axeEpSection->Offset + rva;
+	////////////////////////////////////////////////////////////////////////
 	WORD nSections = pNtHeaders->FileHeader.NumberOfSections;
 	PIMAGE_SECTION_HEADER pSectionHeader = IMAGE_FIRST_SECTION(pNtHeaders);
+
+
 
 	// find what section the entry point is in 
 	for (WORD i = 0; i < nSections; ++i, ++pSectionHeader)
@@ -460,8 +518,6 @@ void AdrenochromeBuilder::calculateEntryPoint()
 			}
 		}
 	}
-	// TOD: 
-	// updateHeader()
 }
 
 
@@ -478,17 +534,3 @@ bool AdrenochromeBuilder::createAXE()
 	return outfileStream_.good();
 }
 
-bool AdrenochromeBuilder::createAXE(std::string path,
-									std::vector<uint8_t> &buffer)
-{
-	// TODO: this var should be a class variable so i can write to it from any
-	// function in this class?
-	std::ofstream outfile(path, std::ios::binary | std::ios::trunc);
-
-	if (!outfile)
-	{
-		return false;
-	}
-	outfile.write(reinterpret_cast<const char *>(buffer.data()), buffer.size());
-	return outfile.good();
-}
