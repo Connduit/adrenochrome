@@ -380,8 +380,10 @@ std::string AdrenochromeBuilder::keepSection(ULONG_PTR addr)
 	// find what section the entry point is in 
 	for (WORD i = 0; i < nSections; ++i, ++pSectionHeader)
 	{
+		// TODO: change all these comparisions in the if statement to virtual not raw?
 		if (dwRva >= pSectionHeader->PointerToRawData && 
-			dwRva < pSectionHeader->PointerToRawData + pSectionHeader->Misc.VirtualSize)
+			dwRva < pSectionHeader->PointerToRawData + pSectionHeader->SizeOfRawData)
+			//dwRva < pSectionHeader->PointerToRawData + pSectionHeader->Misc.VirtualSize)
 		{
 
 			std::string sectionName(reinterpret_cast<const char*>(pSectionHeader->Name), strnlen(reinterpret_cast<const char*>(pSectionHeader->Name), 8)); // TODO: don't hard code length? 
@@ -423,7 +425,8 @@ DWORD AdrenochromeBuilder::Rva2Offset(DWORD dwRva)
 	{   
 		// if the RVA is within the current SectionHeader structure (VirtualAddress to VirtualAddress + SizeOfRawData) 
 		if (dwRva >= pSectionHeader[wIndex].VirtualAddress && 
-			dwRva < (pSectionHeader[wIndex].VirtualAddress + pSectionHeader[wIndex].SizeOfRawData))           
+			dwRva < (pSectionHeader[wIndex].VirtualAddress + pSectionHeader[wIndex].Misc.VirtualSize))
+			//dwRva < (pSectionHeader[wIndex].VirtualAddress + pSectionHeader[wIndex].SizeOfRawData))
 		{
 			return (dwRva - pSectionHeader[wIndex].VirtualAddress + pSectionHeader[wIndex].PointerToRawData);
 		}
@@ -440,32 +443,48 @@ PIMAGE_SECTION_HEADER AdrenochromeBuilder::getPESection(DWORD dwRva)
 
 	for (WORD i = 0; i < nSections; ++i, ++pSectionHeader)
 	{
-		// TODO: this needs to be using pSectionHeader->PointerToRawData since rawImageBase_ is based off of on disk alignment?
 		if (dwRva >= pSectionHeader->VirtualAddress && 
 			dwRva < pSectionHeader->VirtualAddress + pSectionHeader->Misc.VirtualSize)
 		{
 			std::string sectionName(reinterpret_cast<const char*>(pSectionHeader->Name), strnlen(reinterpret_cast<const char*>(pSectionHeader->Name), 8)); // TODO: don't hard code length? 
 			//std::string sectionName = reinterpret_cast<char*>(pSectionHeader->Name);
+			// TODO: make this into its own function?
 			std::vector<AXE_SECTION>::iterator iter = std::find_if(ctx_.axeSections.begin(), ctx_.axeSections.end(),
 				[&sectionName](const AXE_SECTION& s) { return std::string(s.Name) == sectionName; });
-			// axeSection = ctx_.axeSections[TODO_INDEX]; // TODO_INDEX gets us 
 
 			if (iter != ctx_.axeSections.end())
 			{
-				//offsetIntoSection = AddressOfEntryPoint - pSectionHeader->VirtualAddress; // NOTE: this is the RVA to the entry point relative to the section it's in
-				//ctx_.axeHeader.AddressOfEntryPoint = iter->Offset + offsetIntoSection;
 				return pSectionHeader;
 			}
 		}
 	}
-
+	return nullptr;
 }
 
-PAXE_SECTION AdrenochromeBuilder::getAXESection(DWORD dwRva)
+//PAXE_SECTION AdrenochromeBuilder::getAXESection(DWORD dwRva)
+PAXE_SECTION AdrenochromeBuilder::getAXESection(PIMAGE_SECTION_HEADER pSectionHeader)
 {
+	std::string sectionName = reinterpret_cast<char*>(pSectionHeader->Name);
 
-	AXE_SECTION a{};
-	return &a;
+	std::vector<AXE_SECTION>::iterator iter = std::find_if(ctx_.axeSections.begin(), ctx_.axeSections.end(),
+		[&sectionName](const AXE_SECTION& s) { return std::string(s.Name) == sectionName; });
+
+	if (iter != ctx_.axeSections.end())
+	{
+		return &(*iter);
+	}
+
+	// TODO: should never get here? this is just for compiler warnings?
+	AXE_SECTION nullAxeSection{};
+	return &nullAxeSection; // TODO: should just return nullptr instead?
+}
+
+// TODO: not implemented
+BOOL AdrenochromeBuilder::SectionNamesEqual(const IMAGE_SECTION_HEADER &peSection, const AXE_SECTION &axeSection)
+{
+	//return reinterpret_cast<char*>(peSection.Name) == std::string(axeSection.Name);
+	//return peSection.Name == axeSection.Name;
+	return false;
 }
 
 void AdrenochromeBuilder::calculateEntryPoint()
@@ -479,45 +498,19 @@ void AdrenochromeBuilder::calculateEntryPoint()
 	 *
 	 * */
 
-	DWORD offsetIntoSection = 0; 
 
 	PIMAGE_NT_HEADERS pNtHeaders = (PIMAGE_NT_HEADERS)(rawImageBase_ + ((PIMAGE_DOS_HEADER)rawImageBase_)->e_lfanew);
 	DWORD AddressOfEntryPoint = pNtHeaders->OptionalHeader.AddressOfEntryPoint;
 
 	////////////////////////////////////////////////////////////////////////
-	matching_section = getPESection(AddressOfEntryPoint);
+	PIMAGE_SECTION_HEADER matching_section = getPESection(AddressOfEntryPoint);
 	DWORD rva = AddressOfEntryPoint - matching_section->VirtualAddress; 
-	PAXE_SECTION axeEpSection = getAXESection(); // getAXESection that has the same name as Matching Section
+	PAXE_SECTION axeEpSection = getAXESection(matching_section); // getAXESection that has the same name as Matching Section
 	ULONG_PTR entryPoint = axeEpSection->Offset + rva;
+	ctx_.axeHeader.AddressOfEntryPoint = (DWORD)entryPoint;
 	////////////////////////////////////////////////////////////////////////
-	WORD nSections = pNtHeaders->FileHeader.NumberOfSections;
-	PIMAGE_SECTION_HEADER pSectionHeader = IMAGE_FIRST_SECTION(pNtHeaders);
 
 
-
-	// find what section the entry point is in 
-	for (WORD i = 0; i < nSections; ++i, ++pSectionHeader)
-	{
-		// TODO: this needs to be using pSectionHeader->PointerToRawData since rawImageBase_ is based off of on disk alignment 
-		if (AddressOfEntryPoint >= pSectionHeader->VirtualAddress && 
-			AddressOfEntryPoint < pSectionHeader->VirtualAddress + pSectionHeader->Misc.VirtualSize)
-		{
-			offsetIntoSection = AddressOfEntryPoint - pSectionHeader->VirtualAddress; // NOTE: this is the RVA to the entry point relative to the section it's in
-
-			std::string sectionName(reinterpret_cast<const char*>(pSectionHeader->Name), strnlen(reinterpret_cast<const char*>(pSectionHeader->Name), 8)); // TODO: don't hard code length? 
-			//std::string sectionName = reinterpret_cast<char*>(pSectionHeader->Name);
-
-			std::vector<AXE_SECTION>::iterator iter = std::find_if(ctx_.axeSections.begin(), ctx_.axeSections.end(),
-				[&sectionName](const AXE_SECTION& s) { return std::string(s.Name) == sectionName; });
-			// axeSection = ctx_.axeSections[TODO_INDEX]; // TODO_INDEX gets us 
-
-			if (iter != ctx_.axeSections.end())
-			{
-				ctx_.axeHeader.AddressOfEntryPoint = iter->Offset + offsetIntoSection;
-				return;
-			}
-		}
-	}
 }
 
 

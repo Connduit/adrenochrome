@@ -74,8 +74,10 @@ private:
 	DWORD Offset2Rva(DWORD dwOffset);
 
 	PIMAGE_SECTION_HEADER getPESection(DWORD dwRva);
-	PAXE_SECTION  getAXESection(DWORD dwRva);
+	//PAXE_SECTION getAXESection(DWORD dwRva);
+	PAXE_SECTION getAXESection(PIMAGE_SECTION_HEADER pSectionHeader);
 
+	BOOL SectionNamesEqual(const IMAGE_SECTION_HEADER& peSection, const AXE_SECTION& axeSection);
 
 	//ULONG_PTR calculateEntryPoint(); // TODO: rename to calculateAddressOfEntryPoint() ? 
 	void calculateEntryPoint(); // TODO: rename to calculateAddressOfEntryPoint() ? 
@@ -111,6 +113,10 @@ private:
 	
 	//
 
+	// TODO:
+	DWORD SectionAlignment;
+	DWORD FileAlignment;
+	//
 
 	// TODO: add offsets to start of headers, sections, data, etc... to this class 
 	// so i don't have to store them inside the AXE_STRUCTS
