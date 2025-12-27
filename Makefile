@@ -11,8 +11,8 @@ OBJ_DIR  := obj
 BIN_DIR  := bin
 
 # === Include paths ===
-CFLAGS  += -Iinstaller/include -Iloader/include -Ibuilder/include -Icommon/include
-CXXFLAGS+= -Iinstaller/include -Iloader/include -Ibuilder/include -Icommon/include
+CFLAGS  += -Iinstaller/include -Iloader/include -Ibuilder/include -Iengine/include -Icommon/include
+CXXFLAGS+= -Iinstaller/include -Iloader/include -Ibuilder/include -Iengine/include -Icommon/include
 
 # === Source discovery ===
 INSTALLER_SOURCES := $(wildcard installer/src/*.c)

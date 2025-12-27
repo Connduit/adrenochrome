@@ -1,0 +1,4 @@
+#ifndef ADRENOCHROME_COMMAND_H
+#define ADRENOCHROME_COMMAND_H
+
+#endif
