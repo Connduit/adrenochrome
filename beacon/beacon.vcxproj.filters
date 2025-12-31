@@ -15,15 +15,15 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\Engine.h">
+    <ClInclude Include="include\Beacon.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Engine.c">
+    <ClCompile Include="src\Beacon.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\EngineDll.c">
+    <ClCompile Include="src\BeaconDll.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
