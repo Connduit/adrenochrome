@@ -131,7 +131,9 @@
   <ItemGroup>
     <ClCompile Include="src\Builder.cpp" />
     <ClCompile Include="src\converter.cpp" />
+    <ClCompile Include="src\DllConverter.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\Packer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\include\AXEStructs.h" />
@@ -139,6 +141,8 @@
     <ClInclude Include="include\AxeBuilderContext.h" />
     <ClInclude Include="include\AxeConfig.h" />
     <ClInclude Include="include\Builder.h" />
+    <ClInclude Include="include\DllConverter.h" />
+    <ClInclude Include="include\Packer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

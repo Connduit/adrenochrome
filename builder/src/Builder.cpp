@@ -499,12 +499,14 @@ void AdrenochromeBuilder::calculateEntryPoint()
 	 * */
 
 
+	// TODO: instead the address of entry point should be where the function "AxeEntry" lives
+
 	PIMAGE_NT_HEADERS pNtHeaders = (PIMAGE_NT_HEADERS)(rawImageBase_ + ((PIMAGE_DOS_HEADER)rawImageBase_)->e_lfanew);
 	DWORD AddressOfEntryPoint = pNtHeaders->OptionalHeader.AddressOfEntryPoint;
 
 	////////////////////////////////////////////////////////////////////////
 	PIMAGE_SECTION_HEADER matching_section = getPESection(AddressOfEntryPoint);
-	DWORD rva = AddressOfEntryPoint - matching_section->VirtualAddress; 
+	DWORD rva = AddressOfEntryPoint - matching_section->VirtualAddress; // rva relative to the section where the addressofentrypoint exists
 	PAXE_SECTION axeEpSection = getAXESection(matching_section); // getAXESection that has the same name as Matching Section
 	ULONG_PTR entryPoint = axeEpSection->Offset + rva;
 	ctx_.axeHeader.AddressOfEntryPoint = (DWORD)entryPoint;
@@ -514,6 +516,8 @@ void AdrenochromeBuilder::calculateEntryPoint()
 }
 
 
+void AdrenochromeBuilder::findFunctionAddress()
+{ }
 
 bool AdrenochromeBuilder::createAXE()
 {

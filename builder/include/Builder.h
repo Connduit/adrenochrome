@@ -43,6 +43,10 @@ TODO: keep:
 class AdrenochromeBuilder
 {
 public:
+
+	// TODO: add enums to see what type of dll we're loading?
+
+
 	AdrenochromeBuilder(); // : baseAddress_() {}
 	~AdrenochromeBuilder();
 
@@ -72,6 +76,8 @@ private:
 	//
 	DWORD Rva2Offset(DWORD dwRva);
 	DWORD Offset2Rva(DWORD dwOffset);
+
+	void findFunctionAddress();
 
 	PIMAGE_SECTION_HEADER getPESection(DWORD dwRva);
 	//PAXE_SECTION getAXESection(DWORD dwRva);

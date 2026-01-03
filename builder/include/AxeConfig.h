@@ -12,6 +12,8 @@ typedef struct BUILD_CONFIG {
     */
     //std::vector<std::string> sectionNames{".text", ".rdata", ".data"}; 
     std::vector<std::string> sectionNames{".text", ".rdata", ".data", ".reloc"};
+    // TODO: put all section names in here to see why we can't execute at entry point?
+    //std::vector<std::string> sectionNames{".text", ".rdata", ".data", ".reloc", ".pdata", ".rsrc"};
 } BUILD_CONFIG;
 
 #endif

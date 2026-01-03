@@ -127,7 +127,8 @@ void loadAxe(LPVOID lpBuffer, DWORD dwLength) // TODO: dwLength not needed?
 		PBYTE srcPtr = (PBYTE)lpBuffer + pSection->Offset;
 		// memoryAddress = the RVA within the AXE image
 		// NOTE: what's stopping us from just using the Offset field as an RVA instead?
-		PBYTE dstPtr = (PBYTE)(baseAddress + pSection->memoryAddress); 
+		//PBYTE dstPtr = (PBYTE)(baseAddress + pSection->memoryAddress); 
+		PBYTE dstPtr = (PBYTE)(baseAddress + pSection->Offset); 
 		memcpy(dstPtr, srcPtr, pSection->Size);
 		dstPtr += pSection->Size;
 	}
@@ -137,6 +138,17 @@ void loadAxe(LPVOID lpBuffer, DWORD dwLength) // TODO: dwLength not needed?
 
 	// TODO: bad entry address
 	ULONG_PTR entryAddress = (ULONG_PTR)(baseAddress + header->AddressOfEntryPoint);
+	
+	/*
+	void (*AxeEntry)(void) = (void (*)(void))(baseAddress + axeHeader.AddressOfEntryPoint);
+	AxeEntry();
+	*/
+
+	typedef void (*EntryFn)(void);
+	EntryFn ep = (EntryFn)(baseAddress + header->AddressOfEntryPoint);
+	MessageBoxA(NULL, "Jumping now", "Debug", MB_OK);
+	ep();
+	MessageBoxA(NULL, "Returned from entry", "Debug", MB_OK);
 
 	MessageBoxA(NULL, "calling entry address", "Debug", MB_OK);
 	char buf[128];
