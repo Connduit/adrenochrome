@@ -516,8 +516,108 @@ void AdrenochromeBuilder::calculateEntryPoint()
 }
 
 
-void AdrenochromeBuilder::findFunctionAddress()
-{ }
+// buffer is just some (heap?) allocated region of memory where the pe file lives
+DWORD AdrenochromeBuilder::findFunctionAddress(VOID* buffer) // TODO: pass lpProcName here?
+{
+
+	// TODO: dllBaseAddress and rawImageAddress are not used consistently
+	// in this function? 
+
+	LPCSTR lpProcName = "AxeEntry";
+
+	// base
+	UINT_PTR dllBaseAddress = (UINT_PTR)buffer; // TODO: dllBaseAddress should be type ULONG_PTR instead?
+
+	///
+	PIMAGE_NT_HEADERS pNTHeader = (PIMAGE_NT_HEADERS)((ULONG_PTR)dllBaseAddress + ((PIMAGE_DOS_HEADER)dllBaseAddress)->e_lfanew);
+	//uiExportDir = (PIMAGE_EXPORT_DIRECTORY)(dllBaseAddress + ((PIMAGE_DOS_HEADER)dllBaseAddress)->e_lfanew);
+	//uiExportDir = dllBaseAddress + ((PIMAGE_DOS_HEADER)dllBaseAddress)->e_lfanew;
+
+
+	// currenlty we can only process a PE file which is the same type as the one this fuction has
+	// been compiled as, due to various offset in the PE structures being defined at compile time.
+	// NOTE: there's no work around for this, it is absolute
+	/*
+	if (((PIMAGE_NT_HEADERS)pNTHeader)->OptionalHeader.Magic == 0x010B) // PE32
+	{
+		if (dwCompiledArch != 1)
+		{
+			MessageBoxA(NULL, "Magic is 32: but dll is not compiled in 32", "Debug", MB_OK);
+			return 0;
+		}
+	}
+	else if (((PIMAGE_NT_HEADERS)pNTHeader)->OptionalHeader.Magic == 0x020B) // PE64
+	{
+		if (dwCompiledArch != 2)
+		{
+			MessageBoxA(NULL, "Magic is 64: but dll is not compiled in 64", "Debug", MB_OK);
+			return 0;
+		}
+	}
+	else
+	{
+		MessageBoxA(NULL, "Bad magic value", "Debug", MB_OK);
+		return 0;
+	}*/
+
+
+	// uiNameArray = the address of the modules export directory entry
+	UINT_PTR uiNameArray = (UINT_PTR)&((PIMAGE_NT_HEADERS)pNTHeader)->OptionalHeader.DataDirectory[ IMAGE_DIRECTORY_ENTRY_EXPORT  ];
+
+	// NOTE: this is the rva for the Export Directory (PIMAGE_EXPORT_DIRECTORY)
+	DWORD dwExportDirRVA = pNTHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress;
+
+	// get the File Offset of the export directory
+	PIMAGE_EXPORT_DIRECTORY pExportDir = (PIMAGE_EXPORT_DIRECTORY)(rawImageBase_ + Rva2Offset(dwExportDirRVA));
+	
+	// TODO: 
+
+	// get the File Offset for the array of name pointers
+	// NOTE: this is an array of RVAs where each rva helps give an  exported function's name (as a literal char* )
+	// TODO: rename var
+	//DWORD* arrayOfNamesRVAs = (DWORD*)(dllBaseAddress + Rva2Offset(((PIMAGE_EXPORT_DIRECTORY)pExportDir)->AddressOfNames, dllBaseAddress));
+	DWORD* arrayOfNamesRVAs = (DWORD*)(rawImageBase_ + Rva2Offset(((PIMAGE_EXPORT_DIRECTORY)pExportDir)->AddressOfNames));
+
+	// get the File Offset for the array of addresses
+	// NOTE: this is an array of RVAs where each rva helps give an address to a specific exported function
+	// TODO: rename var
+	//uiAddressArray = dllBaseAddress + Rva2Offset( ((PIMAGE_EXPORT_DIRECTORY )pExportDir)->AddressOfFunctions, dllBaseAddress  );
+	DWORD* arrayOfFunctionRVAs = (DWORD*)(rawImageBase_ + Rva2Offset(((PIMAGE_EXPORT_DIRECTORY)pExportDir)->AddressOfFunctions));
+
+	// get the File Offset for the array of name ordinals
+	// NOTE: gets the rva to help get each ordinal index value to tell which AddressOfNames value goes with which AddressOfFunctions value
+	// This is needed because not all exported functions have names. so a function name my have an index of 1, but it's actual address is at 
+	// index 4. The oridinal index it what tells us to use index 4
+	// TODO: rename var?
+	WORD* arrayOfNameOrdinals = (WORD*)(rawImageBase_ + Rva2Offset(((PIMAGE_EXPORT_DIRECTORY)pExportDir)->AddressOfNameOrdinals));
+
+	// get a counter for the number of exported functions...
+	//DWORD dwCounter = ((PIMAGE_EXPORT_DIRECTORY )pExportDir)->NumberOfNames;
+	DWORD numNames = ((PIMAGE_EXPORT_DIRECTORY )pExportDir)->NumberOfNames;
+
+	// loop through all the exported functions to find the ReflectiveLoader
+
+	// TODO: remove these... not needed anymore
+	//DWORD targetFunctionAddress;  // TODO: should be 0
+	//DWORD targetFunctionAddressOffset; // TODO: should be 0 
+
+	for (DWORD i = 0; i < numNames; ++i)
+	{
+		//char * cpExportedFunctionName = (char *)(dllBaseAddress + Rva2Offset( DEREF_32( uiNameArray  ), dllBaseAddress  ));
+		//MessageBoxA(NULL, cpExportedFunctionName, "Exported Function Name: ", MB_OK);
+
+
+		char* prodName = (char*)((ULONG_PTR)rawImageBase_ + Rva2Offset(arrayOfNamesRVAs[i])); // TODO: ULONG_PTR type cast isn't needed?
+		if (strstr(prodName, "AxeEntry") != NULL) // TODO: do not hardcode reflective loader function name that we're using as an entry point
+		{
+			//targetFunctionAddress = dllBaseAddress + Rva2Offset(arrayOfFunctionRVAs[arrayOfNameOrdinals[i]], dllBaseAddress);
+			//targetFunctionAddressOffset = Rva2Offset(arrayOfFunctionRVAs[arrayOfNameOrdinals[i]], dllBaseAddress);
+			//return targetFunctionAddressOffset;
+			return Rva2Offset(arrayOfFunctionRVAs[arrayOfNameOrdinals[i]]);
+		}
+	}
+	return 0;
+}
 
 bool AdrenochromeBuilder::createAXE()
 {

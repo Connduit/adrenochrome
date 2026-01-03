@@ -77,7 +77,7 @@ private:
 	DWORD Rva2Offset(DWORD dwRva);
 	DWORD Offset2Rva(DWORD dwOffset);
 
-	void findFunctionAddress();
+	DWORD findFunctionAddress(VOID* buffer);
 
 	PIMAGE_SECTION_HEADER getPESection(DWORD dwRva);
 	//PAXE_SECTION getAXESection(DWORD dwRva);
