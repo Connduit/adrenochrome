@@ -12,6 +12,8 @@
 // engine.axe
 //void initialize() { }
 
+//#define DLLEXPORT __declspec(dllexport)
+//DLLEXPORT DWORD WINAPI ReflectiveLoader(LPVOID lpParameter) // TODO: remove WINAPI and replace with __cdecl to prevent name mangling
 __declspec(dllexport)
 void AxeEntry(void)
 {
