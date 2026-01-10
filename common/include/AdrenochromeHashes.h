@@ -1,7 +1,6 @@
-#ifndef ADRENOCHROME_LOADER_HASHES_H
-#define ADRENOCHROME_LOADER_HASHES_H
+#ifndef ADRENOCHROME_HASHES_H
+#define ADRENOCHROME_HASHES_H
 
-// TODO: rename file to be something like func/module hashes and move to common/ ?
 
 // TODO: ideally these would be computed "on the fly" in c++
 // by using a constexpr function

@@ -1,5 +1,6 @@
 #include "Loader.h"
 #include "AxeLoaderContext.h"
+//#include "ManualMap.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -22,6 +23,18 @@ int loadAxeFromDisk()
 	MessageBoxA(NULL, "inside loadaxefromdisk", "Debug", MB_OK);
 	//char* targetAxe = "/path/to/targetAxe";
 	char* targetAxe = "C:\\Users\\Connor\\Documents\\Code\\C++\\adrenochrome\\x64\\Release\\engine.axe"; 
+
+	HMODULE h = LoadLibraryA("C:\\Users\\Connor\\Documents\\Code\\C++\\adrenochrome\\x64\\Release\\engine.axe");
+	if (!h)
+	{
+		MessageBoxA(NULL, "LoadLibrary failed", "Debug", MB_OK);
+	}
+	else
+	{
+		MessageBoxA(NULL, "Loaded OK", "Debug", MB_OK);
+		FreeLibrary(h);
+	}
+
 	HANDLE hFile = CreateFileA(targetAxe, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hFile == INVALID_HANDLE_VALUE)
 	{
@@ -60,8 +73,9 @@ int loadAxeFromDisk()
 		return 1;
 	}
 
-	PAXE_HEADER aHeader = (PAXE_HEADER)lpBuffer;
+	//PAXE_HEADER aHeader = (PAXE_HEADER)lpBuffer;
 	loadAxe(lpBuffer, dwLength);
+	return 0;
 
 }
 
@@ -73,7 +87,14 @@ void loadAxe(LPVOID lpBuffer, DWORD dwLength) // TODO: dwLength not needed?
 	// TODO: manually map here
 
 	MessageBoxA(NULL, "inside loadAxe", "Debug", MB_OK);
+	//ManualMap(lpBuffer);
 
+	// NOTE: treating AXE as DLL
+
+
+
+	// NOTE: AXE STUFF
+	/*
 	AXE_LOADER_CONTEXT ctxStruct;   
 	PAXE_LOADER_CONTEXT ctx = &ctxStruct; 
 
@@ -139,10 +160,8 @@ void loadAxe(LPVOID lpBuffer, DWORD dwLength) // TODO: dwLength not needed?
 	// TODO: bad entry address
 	ULONG_PTR entryAddress = (ULONG_PTR)(baseAddress + header->AddressOfEntryPoint);
 	
-	/*
-	void (*AxeEntry)(void) = (void (*)(void))(baseAddress + axeHeader.AddressOfEntryPoint);
-	AxeEntry();
-	*/
+	//void (*AxeEntry)(void) = (void (*)(void))(baseAddress + axeHeader.AddressOfEntryPoint);
+	//AxeEntry();
 
 	typedef void (*EntryFn)(void);
 	EntryFn ep = (EntryFn)(baseAddress + header->AddressOfEntryPoint);
@@ -157,7 +176,7 @@ void loadAxe(LPVOID lpBuffer, DWORD dwLength) // TODO: dwLength not needed?
 
 	// Jump to entry point (first section start)
 	((void(*)(void))entryAddress)(); // TODO: typedef this 
-
+	*/
 	return;
 
 }

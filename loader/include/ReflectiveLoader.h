@@ -4,6 +4,7 @@
 #ifndef ADRENOCHROME_REFLECTIVE_LOADER_H
 #define ADRENOCHROME_REFLECTIVE_LOADER_H
 
+//#include "ManualMap.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -14,6 +15,7 @@ typedef BOOL(WINAPI* DLLMAIN)(HINSTANCE, DWORD, LPVOID);
 
 #define DLLEXPORT __declspec(dllexport)
 
+// TODO: remove, and just use ManualMap.h in common/
 typedef HMODULE (WINAPI* LOADLIBRARYA)
 (LPCSTR lpLibFileName);
 
@@ -46,15 +48,26 @@ DLLEXPORT DWORD WINAPI ReflectiveLoader(LPVOID lpReserved);
 void loadModule(void); // load module into memory
 
 // TODO: move these into common or a subset of loader?
-BOOL initializeContext(PLOADER_CONTEXT ctx); 
-DWORD resolveDependencies(PLOADER_CONTEXT ctx);
-BOOL copyImageIntoMemory(PLOADER_CONTEXT ctx); // TODO: rename to loadImageIntoMemory() ?
-BOOL applyRelocations(PLOADER_CONTEXT ctx); 
-BOOL resolveImports(PLOADER_CONTEXT ctx);
+BOOL initializeReflectiveContext(PLOADER_CONTEXT ctx); 
+//BOOL initializeContext(PLOADER_CONTEXT ctx); 
+
+DWORD resolveReflectiveDependencies(PLOADER_CONTEXT ctx);
+BOOL copyImageIntoMemoryReflective(PLOADER_CONTEXT ctx); // TODO: rename to loadImageIntoMemory() ?
+BOOL applyReflectiveRelocations(PLOADER_CONTEXT ctx); 
+BOOL resolveReflectiveImports(PLOADER_CONTEXT ctx);
+//DWORD resolveDependencies(PLOADER_CONTEXT ctx);
+//BOOL copyImageIntoMemory(PLOADER_CONTEXT ctx); // TODO: rename to loadImageIntoMemory() ?
+//BOOL applyRelocations(PLOADER_CONTEXT ctx); 
+//BOOL resolveImports(PLOADER_CONTEXT ctx);
 // void handleTLS(void); // void handleTLSCallbacks(void); TODO
 // void setProtections(void); // TODO: rename to protectImageMemory ?
 //BOOL callEntryPoint(PLOADER_CONTEXT ctx);
 ULONG_PTR callEntryPoint(PLOADER_CONTEXT ctx);
+
+// void handleTLS(void); // void handleTLSCallbacks(void); TODO
+// void setProtections(void); // TODO: rename to protectImageMemory ?
+//BOOL callEntryPoint(PLOADER_CONTEXT ctx);
+ULONG_PTR callReflectiveEntryPoint(PLOADER_CONTEXT ctx);
 ////////////////////////////////////////
 // getImports();
 // getExports();

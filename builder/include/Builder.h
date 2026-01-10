@@ -57,6 +57,7 @@ public:
 	
 	// TODO: should be the only public function?
 	void build();
+	bool basicBuild(std::string& path);
 private:
 	void initializeContext();
 	void populateContext();

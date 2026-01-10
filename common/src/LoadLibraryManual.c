@@ -255,6 +255,7 @@ HANDLE WINAPI LoadLibraryManual(
 			// if the parameter is 0, it will use the default stack size
 			// TODO: instead of creating a remote thread here, hijack a thread instead? 
 			//hThread = CreateRemoteThread(hProcess, NULL, 1024*1024, lpReflectiveLoader, lpParameter, (DWORD)NULL, &dwThreadId);
+			MessageBoxA(NULL, "Creating Remote Thread", "Debug", MB_OK);
 			hThread = CreateRemoteThread(hProcess, NULL, 0, lpReflectiveLoader, lpParameter, 0, &dwThreadId);
 
 			if (!hThread)

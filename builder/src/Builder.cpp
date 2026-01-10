@@ -59,6 +59,34 @@ void AdrenochromeBuilder::build()
 
 }
 
+bool AdrenochromeBuilder::basicBuild(std::string& path)
+{
+	std::filesystem::path input(path);
+	outputFilename_ = input.replace_extension(".axe").string();
+
+	// Open DLL at end to get size
+	std::ifstream dll(path, std::ios::binary | std::ios::ate);
+	if (!dll)
+		return false;
+
+	std::streamsize size = dll.tellg();
+	if (size <= 0)
+		return false;
+
+	dll.seekg(0, std::ios::beg);
+
+	std::vector<char> buffer(size);
+	if (!dll.read(buffer.data(), size))
+		return false;
+
+	std::ofstream axe(outputFilename_, std::ios::binary | std::ios::trunc);
+	if (!axe)
+		return false;
+
+	axe.write(buffer.data(), size);
+	return axe.good();
+}
+
 // void AdrenochromeBuilder::loadFile(std::string& path)
 // void AdrenochromeBuilder::loadFile(const std::wstring& path)
 //  TODO: change return type?

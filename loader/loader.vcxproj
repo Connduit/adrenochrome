@@ -137,6 +137,7 @@
     <ClInclude Include="..\common\include\GetModuleHandleManual.h" />
     <ClInclude Include="..\common\include\GetProcAddressManual.h" />
     <ClInclude Include="..\common\include\LoadLibraryManual.h" />
+    <ClInclude Include="..\common\include\ManualMap.h" />
     <ClInclude Include="..\common\include\PEStructs.h" />
     <ClInclude Include="..\common\include\StatusCodes.h" />
     <ClInclude Include="..\common\include\Utils.h" />
@@ -150,6 +151,7 @@
     <ClCompile Include="..\common\src\GetModuleHandleManual.c" />
     <ClCompile Include="..\common\src\GetProcAddressManual.c" />
     <ClCompile Include="..\common\src\LoadLibraryManual.c" />
+    <ClCompile Include="..\common\src\ManualMap.c" />
     <ClCompile Include="src\Loader.c" />
     <ClCompile Include="src\LoaderDll.c" />
     <ClCompile Include="src\ReflectiveLoader.c" />
