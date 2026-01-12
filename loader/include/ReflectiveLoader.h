@@ -4,13 +4,14 @@
 #ifndef ADRENOCHROME_REFLECTIVE_LOADER_H
 #define ADRENOCHROME_REFLECTIVE_LOADER_H
 
-//#include "ManualMap.h"
+#include "ManualMap.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
 #define DLL_QUERY_HMODULE 6
 
+/*
 typedef BOOL(WINAPI* DLLMAIN)(HINSTANCE, DWORD, LPVOID);
 
 #define DLLEXPORT __declspec(dllexport)
@@ -27,7 +28,6 @@ typedef LPVOID (WINAPI* VIRTUALALLOC)
 
 typedef DWORD (NTAPI* NTFLUSHINSTRUCTIONCACHE)
 (HANDLE hProcess, PVOID lpBaseAddress, ULONG dwSize);
-
 //////////////////////////////////////////////////////////////
 // TODO: CONTEXTS
 typedef struct // TODO: needs a constructor to zero everything out?
@@ -41,6 +41,7 @@ typedef struct // TODO: needs a constructor to zero everything out?
     NTFLUSHINSTRUCTIONCACHE pNtFlushInstructionCache;
 } LOADER_CONTEXT, *PLOADER_CONTEXT;
 
+*/
 //DLLEXPORT ULONG_PTR WINAPI ReflectiveLoader(LPVOID lpReserved);
 DLLEXPORT DWORD WINAPI ReflectiveLoader(LPVOID lpReserved);
 
@@ -62,7 +63,7 @@ BOOL resolveReflectiveImports(PLOADER_CONTEXT ctx);
 // void handleTLS(void); // void handleTLSCallbacks(void); TODO
 // void setProtections(void); // TODO: rename to protectImageMemory ?
 //BOOL callEntryPoint(PLOADER_CONTEXT ctx);
-ULONG_PTR callEntryPoint(PLOADER_CONTEXT ctx);
+//ULONG_PTR callEntryPoint(PLOADER_CONTEXT ctx);
 
 // void handleTLS(void); // void handleTLSCallbacks(void); TODO
 // void setProtections(void); // TODO: rename to protectImageMemory ?

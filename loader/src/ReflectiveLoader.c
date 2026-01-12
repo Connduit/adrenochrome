@@ -434,7 +434,8 @@ DLLEXPORT DWORD WINAPI ReflectiveLoader(LPVOID lpParameter) // TODO: remove WINA
 	LOADER_CONTEXT ctx = {0};
 	//initializeContext(&ctx);
 	initializeReflectiveContext(&ctx);
-	resolveReflectiveDependencies(&ctx);
+	//resolveReflectiveDependencies(&ctx);
+	resolveDependencies(&ctx);
 	copyImageIntoMemoryReflective(&ctx);
 	applyReflectiveRelocations(&ctx);
 	resolveReflectiveImports(&ctx);
