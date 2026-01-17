@@ -333,6 +333,9 @@ ULONG_PTR callEntryPoint(PLOADER_CONTEXT ctx)
 	// We must flush the instruction cache to avoid stale code being used which was updated by our relocation processing.
 	ctx->pNtFlushInstructionCache((HANDLE)-1, NULL, 0);
 
+	if (!entryAddress)
+		return 60;
+
 	// call our respective entry point, fudging our hInstance value
 	// if we are injecting a DLL via LoadRemoteLibraryR we call DllMain and pass in our parameter (via the DllMain lpReserved parameter)
 	//((DLLMAIN)entryAddress)((HINSTANCE)ctx->baseAddress, DLL_PROCESS_ATTACH, lpParameter); // TODO: breaking here? 

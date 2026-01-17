@@ -1,6 +1,6 @@
 #include "Loader.h"
 #include "AxeLoaderContext.h"
-//#include "ManualMap.h"
+#include "ManualMap.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -24,6 +24,7 @@ int loadAxeFromDisk()
 	//char* targetAxe = "/path/to/targetAxe";
 	char* targetAxe = "C:\\Users\\Connor\\Documents\\Code\\C++\\adrenochrome\\x64\\Release\\engine.axe"; 
 
+	/*
 	HMODULE h = LoadLibraryA("C:\\Users\\Connor\\Documents\\Code\\C++\\adrenochrome\\x64\\Release\\engine.axe");
 	if (!h)
 	{
@@ -33,7 +34,7 @@ int loadAxeFromDisk()
 	{
 		MessageBoxA(NULL, "Loaded OK", "Debug", MB_OK);
 		FreeLibrary(h);
-	}
+	}*/
 
 	HANDLE hFile = CreateFileA(targetAxe, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hFile == INVALID_HANDLE_VALUE)
@@ -87,7 +88,15 @@ void loadAxe(LPVOID lpBuffer, DWORD dwLength) // TODO: dwLength not needed?
 	// TODO: manually map here
 
 	MessageBoxA(NULL, "inside loadAxe", "Debug", MB_OK);
-	//ManualMap(lpBuffer);
+	BOOL res = ManualMap(lpBuffer);
+	if (res)
+	{
+		MessageBoxA(NULL, "manual map worked", "Debug", MB_OK);
+	}
+	else
+	{
+		MessageBoxA(NULL, "manual map did not work", "Debug", MB_OK);
+	}
 
 	// NOTE: treating AXE as DLL
 

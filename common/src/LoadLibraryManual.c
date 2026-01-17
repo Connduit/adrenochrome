@@ -231,6 +231,18 @@ HANDLE WINAPI LoadLibraryManual(
 				break;
 			}
 
+			// ADD THIS DEBUG CODE:
+			char buf[256];
+			sprintf_s(buf, sizeof(buf), "ReflectiveLoader offset: 0x%X (%u bytes)", dwReflectiveLoaderOffset, dwReflectiveLoaderOffset);
+			MessageBoxA(NULL, buf, "Debug", MB_OK);
+
+			// Verify the offset is reasonable
+			if (dwReflectiveLoaderOffset > dwLength)
+			{
+				MessageBoxA(NULL, "ERROR: Offset is beyond file size!", "Debug", MB_OK);
+				break;
+			}
+
 
 			lpRemoteLibraryBuffer = VirtualAllocEx(hProcess, NULL, dwLength, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
 			if (!lpRemoteLibraryBuffer)
@@ -255,12 +267,37 @@ HANDLE WINAPI LoadLibraryManual(
 			// if the parameter is 0, it will use the default stack size
 			// TODO: instead of creating a remote thread here, hijack a thread instead? 
 			//hThread = CreateRemoteThread(hProcess, NULL, 1024*1024, lpReflectiveLoader, lpParameter, (DWORD)NULL, &dwThreadId);
-			MessageBoxA(NULL, "Creating Remote Thread", "Debug", MB_OK);
-			hThread = CreateRemoteThread(hProcess, NULL, 0, lpReflectiveLoader, lpParameter, 0, &dwThreadId);
+			MessageBoxA(NULL, "LoadLibraryManual() - Creating Remote Thread", "Debug", MB_OK);
+			hThread = CreateRemoteThread(hProcess, NULL, 0, lpReflectiveLoader, lpRemoteLibraryBuffer, 0, &dwThreadId);
+			//hThread = CreateRemoteThread(hProcess, NULL, 0, lpReflectiveLoader, lpParameter, 0, &dwThreadId);
 
 			if (!hThread)
 			{
 				MessageBoxA(NULL, "CreateRemoteThread fails", "Debug", MB_OK);
+			}
+			else
+			{
+				// ADD THIS:
+				MessageBoxA(NULL, "Thread created successfully, waiting for result...", "Debug", MB_OK);
+
+				DWORD waitResult = WaitForSingleObject(hThread, 5000);  // Wait 5 seconds
+
+				if (waitResult == WAIT_TIMEOUT)
+				{
+					MessageBoxA(NULL, "Thread still running after 5 seconds", "Debug", MB_OK);
+				}
+				else if (waitResult == WAIT_OBJECT_0)
+				{
+					DWORD exitCode = 0;
+					GetExitCodeThread(hThread, &exitCode);
+					char buf[256];
+					sprintf_s(buf, sizeof(buf), "Thread finished. Exit code: %lu (0x%X)", exitCode, exitCode);
+					MessageBoxA(NULL, buf, "Debug", MB_OK);
+				}
+				else
+				{
+					MessageBoxA(NULL, "WaitForSingleObject failed", "Debug", MB_OK);
+				}
 			}
 
 
