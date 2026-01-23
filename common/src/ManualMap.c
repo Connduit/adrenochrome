@@ -347,7 +347,7 @@ ULONG_PTR callEntryPoint(PLOADER_CONTEXT ctx)
 }
 
 
-
+// TODO: should manual map automatically call entry point?
 BOOL ManualMap(LPVOID lpBuffer)
 {
 	// TODO: 
