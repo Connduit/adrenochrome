@@ -27,6 +27,7 @@
 *.so
 *.so.*
 *.dylib
+*.axe
 
 # Executables
 *.exe
@@ -55,14 +56,12 @@ dkms.conf
 *.dwo
 
 
-# Visual Studio
+# Visual Studio / Visual Studio Code
 .vs/
+.vscode/
 *.log
 *.tlog
 *.suo
 *.db
 x64/
 Debug/
-
-# Misc
-compile_flags.txt
