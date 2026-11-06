@@ -133,6 +133,7 @@
     <ClCompile Include="src\converter.cpp" />
     <ClCompile Include="src\DllConverter.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\AxeArchive.cpp" />
     <ClCompile Include="src\Packer.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -141,6 +142,7 @@
     <ClInclude Include="include\AxeBuilderContext.h" />
     <ClInclude Include="include\AxeConfig.h" />
     <ClInclude Include="include\Builder.h" />
+    <ClInclude Include="include\AxeArchive.h" />
     <ClInclude Include="include\DllConverter.h" />
     <ClInclude Include="include\Packer.h" />
   </ItemGroup>

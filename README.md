@@ -4,18 +4,24 @@ Adrenochrome is an experimental Windows C/C++ project for studying reflective DL
 
 The implementation is a work in progress. Several features described in the archived READMEs are plans or experiments rather than working capabilities.
 
+## Analysis archive workflow
+
+The builder now writes a **non-executing AXE analysis archive**. It preserves the complete input DLL and provides `pack`, `inspect`, and `extract` commands. This is deliberately a separate format from the unfinished runtime AXE structures: **do not pass these archives to the existing loader**. No loader or mapping code was changed.
+
+See [the analysis archive specification and tests](builder/ANALYSIS_ARCHIVE.md).
+
 ## What is implemented
 
 | Component | Current role |
 | --- | --- |
-| `builder/` | Console application. Its active `basicBuild` path copies input bytes to a sibling file with an `.axe` extension. |
+| `builder/` | Console application for packing, inspecting, and extracting non-executing analysis archives containing the complete DLL. |
 | `installer/` | Experimental DLL that attempts to load the loader into another Windows process. It contains developer-specific paths and interactive debug dialogs. |
 | `loader/` | Reflective loading code and a disk-loading experiment that passes file contents to the PE manual mapper. The separate AXE mapping experiment is commented out. |
 | `common/` | Shared PE structures, AXE structures, manual mapping, and module/export lookup helpers. |
 | `engine/` | Demonstration DLL with message-box diagnostics and an exported `AxeEntry` function. |
 | `beacon/`, `command/`, `uninstaller/` | Placeholder modules with message-box DLL entry points; networking, command execution, and uninstall logic are not implemented in their corresponding source files. |
 
-The intended architecture separates module preparation, loading, and engine functionality. Today, an `.axe` file produced by the CLI is still the original input file byte for byte. It does **not** demonstrate header removal, encryption, compression, or conversion to position-independent code. `DllConverter` and `Packer` are scaffolding, and `converter.cpp` contains commented pseudocode.
+The intended architecture separates module preparation, loading, and engine functionality. The analysis archive preserves the original DLL byte for byte inside a versioned container. It does **not** demonstrate header removal, encryption, compression, or conversion to position-independent code. `DllConverter` and `Packer` are scaffolding, and `converter.cpp` contains commented pseudocode.
 
 ## Component purposes and behavior
 
@@ -23,7 +29,7 @@ The intended architecture separates module preparation, loading, and engine func
 
 `builder/` is the development-time tool, compiled as `builder.exe`. Its intended purpose is to turn a normal Windows DLL into an AXE module and eventually package modules for the runtime components.
 
-The current executable enters through [`builder/src/main.cpp`](builder/src/main.cpp). With exactly one input argument, it calls `AdrenochromeBuilder::basicBuild`, which reads the file and writes the same bytes to a sibling `.axe` file. This path does not inspect PE headers or apply the experimental conversion logic. The resulting file retains the input's format regardless of its new extension.
+The current executable enters through [`builder/src/main.cpp`](builder/src/main.cpp) and delegates to `AxeArchive.cpp`. It validates basic PE DLL structure, preserves the complete file in an analysis container, reports section metadata, and can extract the original bytes. It never loads or executes the contents. The former single-input copy CLI has been replaced by explicit subcommands.
 
 The rest of the directory records the larger design:
 
@@ -33,7 +39,7 @@ The rest of the directory records the larger design:
 - `DllConverter` declares AXE and PIC (position-independent code) targets, but its conversion cases have no implementation.
 - `Packer` is a placeholder for packaging; its source comments propose encryption and compression, but neither is implemented there.
 
-The builder therefore currently supports a file-copy experiment. A successful copy does not validate the proposed AXE format or prove that the loader can execute the result.
+The old `AdrenochromeBuilder` conversion and `basicBuild` code remain in the tree but are not called by the CLI. Analysis archive tests validate storage and extraction, not executable loading or the experimental runtime AXE format.
 
 ### Installer: experimental bootstrap DLL
 
@@ -50,7 +56,7 @@ Its purpose in the prototype is to initiate loading of another DLL into a Window
 - `ReflectiveLoader.c` exposes the reflective entry point and uses the shared PE mapping helpers. The active implementation receives a raw image address through its parameter and checks PE signatures. An alternative image-discovery implementation also exists, but is not the active entry path.
 - `LoaderDll.c` contains the regular DLL entry point. On process attachment, it displays a diagnostic and starts a thread that calls `startEngine`.
 
-[`loader/src/Loader.c`](loader/src/Loader.c) implements that engine handoff. `startEngine` calls the disk-loading experiment, which reads a file from a hard-coded path and passes its contents to the shared `ManualMap` function. Although the file and function names refer to AXE, the active mapper consumes a PE image. This matches the builder's current behavior of preserving the input DLL bytes.
+[`loader/src/Loader.c`](loader/src/Loader.c) implements that engine handoff. `startEngine` calls the disk-loading experiment, which reads a file from a hard-coded path and passes its contents to the shared `ManualMap` function. Although the file and function names refer to AXE, the active mapper consumes a PE image. This previously matched the old `basicBuild` copy behavior. It does not accept the new analysis archive wrapper.
 
 The separate code for interpreting custom AXE headers and sections is commented out. Several other functions, including PIC loading and section-based loading, are empty placeholders. The archived notes' broader module registration and export-forwarding design should not be read as implemented runtime behavior.
 
@@ -168,34 +174,24 @@ make -j4 CC='x86_64-w64-mingw32-gcc-posix -include stdio.h' \
   CXX=x86_64-w64-mingw32-g++-posix
 ```
 
-## Run and smoke-test the builder
+## Run and test the analysis builder
 
-The executable accepts one input-file path. It writes a sibling file with the extension replaced by `.axe`, overwriting that output if it exists. The current implementation does not validate that the input is a DLL.
+The analysis CLI can be built independently on Linux without Windows headers or the loading components:
 
-The following PowerShell smoke test uses a temporary text fixture to verify the actual CLI behavior without loading code. Set `$builder` to the absolute path of your Windows-built `builder.exe` (or a cross-built executable with its required MinGW runtime DLLs available):
-
-```powershell
-$builder = (Resolve-Path '.\x64\Debug\builder.exe').Path
-$scratch = Join-Path ([IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString())
-New-Item -ItemType Directory -Path $scratch | Out-Null
-try {
-    $inputFile = Join-Path $scratch 'fixture.txt'
-    $outputFile = Join-Path $scratch 'fixture.axe'
-    [IO.File]::WriteAllText($inputFile, 'adrenochrome copy smoke test')
-    & $builder $inputFile
-    if (!(Test-Path $outputFile)) { throw 'Builder did not create the output' }
-    if ((Get-FileHash $inputFile).Hash -ne (Get-FileHash $outputFile).Hash) {
-        throw 'Output differs from input'
-    }
-    'PASS: builder created an identical .axe copy'
-} finally {
-    Remove-Item -Recurse -Force $scratch
-}
+```sh
+g++ -std=c++17 -Wall -Wextra -Werror -Ibuilder/include \
+  builder/src/main.cpp builder/src/AxeArchive.cpp -o /tmp/axe-analysis-builder
+/tmp/axe-analysis-builder pack input.dll output.axe
+/tmp/axe-analysis-builder inspect output.axe
+/tmp/axe-analysis-builder extract output.axe restored.dll
+python3 builder/tests/test_archive.py /tmp/axe-analysis-builder
 ```
 
-Check output existence and contents explicitly: `main` ignores the boolean returned by `basicBuild`, so its exit status does not reliably report copy failures. With no arguments it prints `Not enough arguements`; more than one input argument is silently ignored.
+On Windows, the equivalent commands use the built `builder.exe`. Output paths must not already exist. The input limit is 256 MiB. Errors return status 1; incorrect command syntax returns status 2. Archives preserve the entire DLL and are for data inspection only. The test fixture contains synthetic PE metadata and data, and is never executed.
 
-## Run the current DLL prototype on Windows
+## Historical DLL prototype workflow on Windows
+
+**Compatibility:** The following describes the pre-existing runtime experiment, which has not been updated for analysis archives. Archives made by the new `pack` command are incompatible with this workflow.
 
 The current manual workflow uses an external DLL injector. The maintainer uses **Xenos**, with its injection type set to **Native Injection** for the initial `installer.dll` load.
 
@@ -207,17 +203,17 @@ The current manual workflow uses an external DLL injector. The maintainer uses *
 
 The two DLLs have different roles: `installer.dll` runs in the initial host process and bootstraps the next stage; `loader.dll` is the DLL reflectively loaded and manually mapped into `mspaint.exe`. The injector's **Native Injection** setting applies to the initial installer load. The subsequent reflective load is performed by the project's own code. Use separate processes for these stages.
 
-`engine.axe` is intended to be a custom DLL-derived module that retains the sections and metadata required for loading while removing standard PE identifying information and other unnecessary content. This is the intended AXE design, rather than a guarantee that all identifying information can be removed. In the current executable path, the builder copies the DLL unchanged to `.axe`, and the loader passes those bytes to the PE manual mapper. The custom stripped-format conversion and its corresponding AXE-specific loading path remain unfinished.
+`engine.axe` is intended to be a custom DLL-derived module that retains the sections and metadata required for loading while removing standard PE identifying information and other unnecessary content. This is the intended AXE design, rather than a guarantee that all identifying information can be removed. The former `basicBuild` path copied the DLL unchanged to `.axe`, and the loader passes those bytes to the PE manual mapper. The new analysis CLI wraps the original file in an archive instead; the runtime loader does not support that wrapper. The custom stripped-format conversion and its corresponding AXE-specific loading path remain unfinished.
 
 The overall sequence is: **external injector → installer in the initial host → loader in Paint → attempt to manually map `engine.axe`**. The engine is the demonstration module reached by that final stage; its current behavior is to display diagnostic message boxes.
 
 Before running, check the paths compiled into `installer/src/Installer.c` and `loader/src/Loader.c`. The installer expects `loader.dll` at a developer-specific Debug or Release location, depending on build definitions. After loading, the loader attempts to read `engine.axe` from another hard-coded path, currently under the original author's `x64/Release` directory. Building the DLLs alone does not configure these locations.
 
-This is a manual prototype workflow reported by the maintainer, not an automated test. It depends on Windows, those file paths, the expected processes, and interactive debug dialogs. The DLL components have no standalone application launcher, and there is no portable, automated end-to-end run command in this checkout. This workflow has not been executed in the Linux cloud environment; the builder smoke test above does not exercise it.
+This is a manual prototype workflow reported by the maintainer, not an automated test. It depends on Windows, those file paths, the expected processes, and interactive debug dialogs. The DLL components have no standalone application launcher, and there is no portable, automated end-to-end run command in this checkout. This workflow has not been executed in the Linux cloud environment; the archive tests above do not exercise it.
 
 ## Test and validation status
 
-There is no automated test suite, `make test` target, or checked-in CI workflow. The available validation consists of compilation, artifact inspection, and manual Windows checks.
+The analysis builder has a Python regression suite covering archive round trips, metadata inspection, invalid inputs, corruption, overwrite protection, and CLI failures. There is no `make test` target or checked-in CI workflow. Runtime loading still has no automated test suite.
 
 To force a fresh Linux build without deleting existing outputs:
 
@@ -231,12 +227,12 @@ file "$check_dir"/bin/*
 
 For the cloud toolchain, use the PATH export and `-posix` compiler names shown above. Expect x86-64 PE32+ files: three DLLs and one executable. Artifact inspection confirms file format, not runtime correctness.
 
-All four Makefile targets were freshly cross-compiled with MinGW GCC 14 during cloud setup. Windows execution, the PowerShell smoke test, native Visual Studio builds, and x86 builds have not been verified in that environment.
+All four Makefile targets were freshly cross-compiled with MinGW GCC 14 during cloud setup. The analysis CLI and its Python regression suite run natively on Linux. Windows execution, native Visual Studio builds, and x86 builds have not been verified in that environment.
 
 Known limitations to account for during development:
 
 - `installer/src/Installer.c` and `loader/src/Loader.c` contain hard-coded Windows paths and runtime assumptions.
-- AXE format definitions and conversion code are unfinished; the active CLI preserves PE headers by copying the entire file.
+- AXE format definitions and conversion code are unfinished; the analysis CLI preserves the complete DLL within its separate archive format.
 - Compiler warnings remain, including a returned pointer to a local variable in `AdrenochromeBuilder::getAXESection`. Successful compilation does not establish that those experimental paths are correct.
 - The Windows projects and Linux Makefile cover different sets of components.
 
