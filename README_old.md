@@ -1,0 +1,68 @@
+# ReflectiveLoader-TODO-Rename-
+Multipurpose Loader:
+Reflective Loader for DLLs, Stripped DLLs, and Position Independent Code
+Based off of Athena: https://wikileaks.org/vault7/#Athena
+
+# Order Flow
+- stager
+  - locates the reflective loader function offset inside host.dll
+  - allocates rwx memory
+  - copies raw bytes of host.dll into that newly allocated memory
+  - jumps into host.dll's exported ReflectiveLoader()
+- host.dll
+  - find current module's (host.dll) own in-memory base address
+  - parses its own PE headers
+  - maps itself into a new memory region
+    - copy headers
+    - copy sections (.text, .data, .rdata)
+  - fixes relocations
+  - resolve imports
+  - sets memory protections
+  - calls its own DllMain(DLL_PROCESS_ATTACH)
+- host.dll::DllMain(DLL_PROCESS_ATTACH)
+  - setup globals
+  - initalize hap or scratch buffers
+  - start a new worker thread
+- host.dll::HostEntryPoint() (the real host.dll main function)
+  - inialize cyryptography
+  - - intialize ipc/state
+  - initilaize comms / server connections (if not offline)
+  - decrypt and decode payload.dll/engine.dll from .data section or whatever section it is stored in
+  - Call ManualMapEngine
+ - host.dll::ManualMapEngine()
+   - allocates memory for payload.dll/engine.dll
+   - applies relocations
+   - resolve imports
+   - handle tls callbacks
+   - calls payload.dll/engine.dll's DllMain(DLL_PROCESS_ATTACH)
+- payload.dll/engine.dll
+    - does whatever logic is defined in payload.dll/engine.dll
+
+### Notes
+- if using installer.dll, injector (Xenos) must have injection type set to Native Inject
+- cannot inject installer.dll into the same process as loader.dll
+
+### TODO?
+- thread hijacking
+- manual mapping
+- reflective loading
+- process hollowing (probably don't need this)
+- in order to create a loader/manual_mapper (that lives in host.dll) that can load special files like .axe, we need to create a custom loader similar to https://github.com/monoxgas/sRDI/tree/master/ShellcodeRDI. But instead of assuming and using the meta data associated with a dll, we would need to embedd meta data associated with an .axe file.
+- create a .axe file "builder" that takes in a dll, reads/parses the dll, and converts it into a .axe by rewriting the contents of the pe file into a custom .axe file struct. basically all the windows structs normally used will have to be rewritten in a .axe struct format
+    - think of pe files as a way to encode binary/raw data. we're simply rewriting our own encoding method
+- add "function hooking"? 
+    - if we know av and static analysis use certian functions, try to prevent them from easily being able to use them
+
+### Helpful
+- https://github.com/rapid7/metasploit-framework/blob/master/docs/metasploit-framework.wiki/Using-ReflectiveDLL-Injection.md
+- https://github.com/fancycode/MemoryModule/blob/master/doc/readme.rst
+- https://github.com/DarthTon/Blackbone/tree/master
+  - https://github.com/DarthTon/Blackbone/tree/master/src/BlackBone/ManualMap
+  - https://github.com/DarthTon/Blackbone/tree/master/src/BlackBone/PE
+  - https://github.com/DarthTon/Blackbone/tree/master/src/BlackBone/Process
+
+### Glossary
+- DLL Shell: a dll that can be ran as if it was shellcode (if you know how to run it). It is structurally a DLL but packaged and executed like sRDI shellcode. It is a DLL + metadata + loader code bundled into a custom module format that still "appears" as a normal dll on disk
+- reflective loading = manual mapping + finding the entry point within the pe file 
+- manual mapping = loading a DLL manually (by yourself) instead of letting Windows do it for u (via LoadLibrary)
+- TLS Callbacks: a function pointer stored in the PE file's .tls directory. The function pointer must point to a valid executable memory address. TLS Callbacks are for calling other functions before DllMain is called. A non-malicous example would be if the DLL has CRT functions, the compiler/linker might determine a TLS Callback is needed to initialize the CRT enviroment so the DLL has access to CRT functions (like printf) by the time DllMain is called
