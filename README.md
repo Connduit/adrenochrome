@@ -195,7 +195,25 @@ try {
 
 Check output existence and contents explicitly: `main` ignores the boolean returned by `basicBuild`, so its exit status does not reliably report copy failures. With no arguments it prints `Not enough arguements`; more than one input argument is silently ignored.
 
-The DLL components have no standalone application launcher. Their current runtime experiments depend on Windows, developer-specific paths, and interactive dialogs. There is no portable, automated end-to-end run command in this checkout. The builder smoke test above does not exercise reflective loading or manual mapping.
+## Run the current DLL prototype on Windows
+
+The current manual workflow uses an external DLL injector. The maintainer uses **Xenos**, with its injection type set to **Native Injection** for the initial `installer.dll` load.
+
+1. Open a process to host `installer.dll`, such as **Notepad** (`notepad.exe`).
+2. Open **Microsoft Paint** before loading the installer. The installer currently searches specifically for `mspaint.exe`; this target is hard-coded.
+3. In Xenos, select the initial host process (for example, Notepad), choose `installer.dll`, and use **Native Injection**.
+4. The installer's worker then attempts to load `loader.dll` into **Paint**, using the project's reflective loading and manual mapping code.
+5. Once initialized in Paint, `loader.dll` attempts to read `engine.axe` from disk and load it using the shared manual mapper.
+
+The two DLLs have different roles: `installer.dll` runs in the initial host process and bootstraps the next stage; `loader.dll` is the DLL reflectively loaded and manually mapped into `mspaint.exe`. The injector's **Native Injection** setting applies to the initial installer load. The subsequent reflective load is performed by the project's own code. Use separate processes for these stages.
+
+`engine.axe` is intended to be a custom DLL-derived module that retains the sections and metadata required for loading while removing standard PE identifying information and other unnecessary content. This is the intended AXE design, rather than a guarantee that all identifying information can be removed. In the current executable path, the builder copies the DLL unchanged to `.axe`, and the loader passes those bytes to the PE manual mapper. The custom stripped-format conversion and its corresponding AXE-specific loading path remain unfinished.
+
+The overall sequence is: **external injector → installer in the initial host → loader in Paint → attempt to manually map `engine.axe`**. The engine is the demonstration module reached by that final stage; its current behavior is to display diagnostic message boxes.
+
+Before running, check the paths compiled into `installer/src/Installer.c` and `loader/src/Loader.c`. The installer expects `loader.dll` at a developer-specific Debug or Release location, depending on build definitions. After loading, the loader attempts to read `engine.axe` from another hard-coded path, currently under the original author's `x64/Release` directory. Building the DLLs alone does not configure these locations.
+
+This is a manual prototype workflow reported by the maintainer, not an automated test. It depends on Windows, those file paths, the expected processes, and interactive debug dialogs. The DLL components have no standalone application launcher, and there is no portable, automated end-to-end run command in this checkout. This workflow has not been executed in the Linux cloud environment; the builder smoke test above does not exercise it.
 
 ## Test and validation status
 
