@@ -1,4 +1,4 @@
-#include "Builder.h"
+﻿#include "Builder.h"
 #include "AxeConfig.h"
 #include "PEStructs.h"
 
@@ -137,11 +137,21 @@ void AdrenochromeBuilder::initializeContext() // TODO: rename to initializeHeade
 	ctx_.axeHeader.NumberOfRelocations = 0;
 	ctx_.axeHeader.NumberOfImports = 0;
 
+	PIMAGE_NT_HEADERS pNtHeaders = (PIMAGE_NT_HEADERS)(rawImageBase_ + ((PIMAGE_DOS_HEADER)rawImageBase_)->e_lfanew);
+	ctx_.axeHeader.PreferredImageBase = pNtHeaders->OptionalHeader.ImageBase;  // Usually 0x140000000 for x64
+
 	// TODO: delete? pointless? 
 	// outfileStream_.write(reinterpret_cast<const char *>(&ctx_.axeHeader), sizeof(ctx_.axeHeader));
 
+	//buildConfig.sectionNames = { ".text", ".rdata", ".data" };
+
 	for (std::string& name : buildConfig.sectionNames)
 	{
+		/*
+		if (name == ".reloc")
+		{
+			continue;
+		}*/
 		AXE_SECTION section{};
 		size_t copySize = (name.size() < sizeof(section.Name)) ? name.size() : sizeof(section.Name);
 		std::memcpy(section.Name, name.data(), copySize);
@@ -167,104 +177,58 @@ void AdrenochromeBuilder::initializeContext() // TODO: rename to initializeHeade
 void AdrenochromeBuilder::populateContext()
 {
 	PIMAGE_NT_HEADERS pNtHeaders = (PIMAGE_NT_HEADERS)(rawImageBase_ + ((PIMAGE_DOS_HEADER)rawImageBase_)->e_lfanew);
-	// TODO: need to do sizeofimage - sizeofheaders? (if we plan on removing
-	// headers)
-	// ctx_->axeHeader.SizeOfImage = pNtHeaders->OptionalHeader.SizeOfImage;
-	// TODO: im pretty sure this will be wrong since im stripping a bunch of parts
-	// of the dll. the entry point will have to be manually calculated
-	// ctx_->axeHeader.EntryPointRVA =
-	// pNtHeaders->OptionalHeader.AddressOfEntryPoint; // TODO: for should i just
-	// return absolute?
 
-	// uint32_t dataStart = SectionTableOffset + SectionCount * sizeof(AXE_SECTION)
+	DWORD currentRVA = 0x1000;
+	//uint32_t numSectionHeaders = ctx_.axeHeader.NumberOfSections; //+ 1;  // +1 for .reloc
+	//uint32_t dataStart = sizeof(AXE_HEADER) + numSectionHeaders * sizeof(AXE_SECTION);
+	//uint32_t dataStart = sizeof(AXE_HEADER) + numSectionHeaders * sizeof(AXE_SECTION);
 	uint32_t dataStart = sizeof(AXE_HEADER) + ctx_.axeHeader.NumberOfSections * sizeof(AXE_SECTION);
+
 	cursor_ = dataStart;
-	//uint32_t cursor = dataStart;
 
 	WORD nSections = pNtHeaders->FileHeader.NumberOfSections;
 	PIMAGE_SECTION_HEADER pSectionHeader = IMAGE_FIRST_SECTION(pNtHeaders);
 
-	// Populate AXE SectionHeader
+	// Populate AXE sections
 	for (USHORT i = 0; i < nSections; ++i, ++pSectionHeader)
 	{
 		std::string sectionName = reinterpret_cast<char*>(pSectionHeader->Name);
-		//std::vector<AXE_SECTION>::const_iterator iter = std::find_if(axeSections.begin(), axeSections.end(), [&sectionName](const AXE_SECTION& s) { return s.Name == sectionName; });
-		// Check the current section's name to see if we want to keep it
-		std::vector<AXE_SECTION>::iterator iter = std::find_if(ctx_.axeSections.begin(), ctx_.axeSections.end(), 
+		auto iter = std::find_if(ctx_.axeSections.begin(), ctx_.axeSections.end(),
 			[&sectionName](const AXE_SECTION& s) { return std::string(s.Name) == sectionName; });
 
 		if (iter != ctx_.axeSections.end())
 		{
-			// TODO: this should be changed to VirtualSize? SizeOfRawData gets the VirtualSize rounded up to the nearest page (4kb)
-			// or maybe keep at SizeOfRawData to give us a little bit of a buffer? (probs not needed tho)
-			//DWORD VirtualSize = pSectionHeader->Misc.VirtualSize;
-			// TODO: "trim" off alignment bytes from the SizeOfRawData/VirtualSize
 			DWORD SizeOfRawData = pSectionHeader->SizeOfRawData;
 			iter->Offset = cursor_;
 			iter->Size = SizeOfRawData;
+			iter->memoryAddress = currentRVA;
 			cursor_ += iter->Size;
+			currentRVA += (SizeOfRawData + 0xFFF) & ~0xFFF;
 		}
 	}
 
-
-	// TODO: relocs
-
-	// relocRVA = block.VirtualAddress + entry.Offset;
-	// section.VirtualAddress = IMAGE_SECTION_HEADER.VirtualAddress
-	// sectionOffsetInAXE = fileoffset in axe file where corresponding section is
-	// axeOffset = absolute offset relative to the axe image base? // NOTE: this is the "relocationDelta?"
-
-	//axeOffset = sectionOffsetInAXE + (relocRVA - section.VirtualAddress);
-
-
-	
-	//
-	ULONG_PTR relocationDelta = rawImageBase_ - pNtHeaders->OptionalHeader.ImageBase; 
-	DWORD offsetIntoSection = 0; 
-
+	// Process relocations
 	PIMAGE_DATA_DIRECTORY pRelocDir = &pNtHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC];
-
 	if (pRelocDir->Size)
 	{
-		// TODO: add this to be 100% sure we've gone through all the blocks
-		// BYTE* relocEnd = rawImageBase_ + relocSection.PointerToRawData + relocSection.SizeOfRawData;
-		// for (; (BYTE*)relocBlock < relocEnd; relocBlock = (PIMAGE_BASE_RELOCATION)((BYTE*)relocBlock + relocBlock->SizeOfBlock))
+		PIMAGE_BASE_RELOCATION relocBlock = (PIMAGE_BASE_RELOCATION)(rawImageBase_ + Rva2Offset(pRelocDir->VirtualAddress));
 
-
-
-		PIMAGE_BASE_RELOCATION relocBlock = (PIMAGE_BASE_RELOCATION)(rawImageBase_+ Rva2Offset(pRelocDir->VirtualAddress));
-		// baseAddressBuffer = (baseAddress + ((PIMAGE_DATA_DIRECTORY)pRelocDir)->VirtualAddress);
-		// and we itterate through all entries...
-		// NOTE: we can do this because windows api says the IMAGE_BASE_RELOCATION blocks are terminated
-		// by a NULL relocation block, meaning SizeOfBlock will be 0 when we want to stop looking/relocating... 
-		// apparently this isn't always 100% true? 
 		for (; relocBlock->SizeOfBlock; relocBlock = (PIMAGE_BASE_RELOCATION)((ULONG_PTR)relocBlock + relocBlock->SizeOfBlock))
 		{
-			// if (relocBlock->SizeOfBlock == 0) break; // optional safety
+			ULONG numRelocs = (relocBlock->SizeOfBlock - sizeof(IMAGE_BASE_RELOCATION)) / sizeof(IMAGE_RELOC);
+			PIMAGE_RELOC pReloc = (PIMAGE_RELOC)((ULONG_PTR)relocBlock + sizeof(IMAGE_BASE_RELOCATION));
 
-			//iatAddress = (baseAddress + ((PIMAGE_BASE_RELOCATION)relocBlock)->VirtualAddress);
-			ULONG_PTR relocBlockBase = (ULONG_PTR)(rawImageBase_ + Rva2Offset(relocBlock->VirtualAddress)); 
-
-			// uiValueB = number of entries in this relocation block
-			// TODO:
-			ULONG numRelocs = (((PIMAGE_BASE_RELOCATION)relocBlock)->SizeOfBlock - sizeof(IMAGE_BASE_RELOCATION)) / sizeof(IMAGE_RELOC); // TODO: should this be DWORD?
-			// rawImageBaseBuffer = (((PIMAGE_BASE_RELOCATION)baseAddressBuffer)->SizeOfBlock - sizeof(IMAGE_BASE_RELOCATION)) / sizeof(IMAGE_RELOC);
-
-			// uiValueD is now the first entry in the current relocation block
-			//sizeofRawData = (ULONG_PTR)((ULONG_PTR)relocBlock + sizeof(IMAGE_BASE_RELOCATION));
-			PIMAGE_RELOC pReloc = (PIMAGE_RELOC)((ULONG_PTR)relocBlock + sizeof(IMAGE_BASE_RELOCATION)); // NOTE: this is the specific relocation entry
-
-			// we itterate through all the entries in the current block...
 			for (ULONG i = 0; i < numRelocs; ++i, ++pReloc)
 			{
-				// TODO: 
-				//BOOL keepSec = keepSection(relocBlockBase + pReloc->offset);
-				std::string sectionName = keepSection(relocBlockBase + pReloc->offset);
+				DWORD relocRVA = relocBlock->VirtualAddress + pReloc->offset;
+				std::string sectionName = keepSection(relocRVA);
+
 				if (sectionName.size() > 0)
 				{
-					// apply/store relocs
+					PIMAGE_SECTION_HEADER pTargetSection = getPESection(relocRVA);
+					if (!pTargetSection) continue;
 
-					std::vector<AXE_SECTION>::iterator iter = std::find_if(ctx_.axeSections.begin(), ctx_.axeSections.end(),
+					auto iter = std::find_if(ctx_.axeSections.begin(), ctx_.axeSections.end(),
 						[&sectionName](const AXE_SECTION& s) { return std::string(s.Name) == sectionName; });
 
 					if (iter != ctx_.axeSections.end())
@@ -272,50 +236,40 @@ void AdrenochromeBuilder::populateContext()
 						DWORD index = static_cast<DWORD>(std::distance(ctx_.axeSections.begin(), iter));
 						AXE_RELOCATION relocAxe{};
 						relocAxe.sectionIndex = index;
-						relocAxe.offset = pReloc->offset; // offset within the section
+						relocAxe.offset = relocRVA - pTargetSection->VirtualAddress;
 						relocAxe.type = pReloc->type;
 						ctx_.axeRelocations.push_back(relocAxe);
 					}
-
-				}
-				else
-				{
-					// TODO: throw real warning here
-					std::cout << "relocation found inside non idea section" << std::endl;
 				}
 			}
 		}
 
-		//updateRelocations();
+		ctx_.axeHeader.NumberOfRelocations = ctx_.axeRelocations.size();
 	}
 
-	AXE_SECTION& relocSection = *(ctx_.axeSections.end() - 1);
-	AXE_SECTION& sectionBeforeReloc = *(ctx_.axeSections.end() - 2);
-	// TODO: use .back() instead?
-	//AXE_SECTION& relocSection = ctx_.axeSections.back();
-	//AXE_SECTION& sectionBeforeReloc = ctx_.axeSections[ctx_.axeSections.size() - 2];
+	// ✅ Add .reloc section BEFORE calculating entry point
+	if (ctx_.axeRelocations.size() > 0)
+	{
+		std::cout << "Adding .reloc section, current section count: " << ctx_.axeSections.size() << std::endl;  // ✅ ADD
+		AXE_SECTION relocSection{};
+		std::memcpy(relocSection.Name, ".reloc", 6);
+		relocSection.Offset = cursor_;  // Right after last data section
+		relocSection.Size = ctx_.axeRelocations.size() * sizeof(AXE_RELOCATION);
+		relocSection.memoryAddress = 0;
+		ctx_.axeSections.push_back(relocSection);
+		ctx_.axeHeader.NumberOfSections = ctx_.axeSections.size();
+		std::cout << "After adding .reloc, section count: " << ctx_.axeSections.size() << std::endl;  // ✅ ADD
 
-	relocSection.Offset = sectionBeforeReloc.Offset + sectionBeforeReloc.Size;
-	//relocSection.Offset = sizeof(AXE_HEADER) + ctx_.axeSections.size() * sizeof(AXE_SECTION) + sectionBeforeReloc.Offset + sectionBeforeReloc.Size;
-	relocSection.Size = ctx_.axeRelocations.size() * sizeof(AXE_RELOCATION); // TODO: this is wrong? 
+	}
 
-
-
-	// if relocations exist, add a relocation section to ctx_.axeSections
-	// if (ctx_.axeRelocations.size()) { }
-
-
-
-
-	// TODO: imports
-
-
-	cursor_ = 0;
 	calculateEntryPoint();
+
+	// Write to file
+	cursor_ = 0;
 	updateHeader();
 	cursor_ += sizeof(AXE_HEADER);
 	updateSectionHeaders();
-	cursor_ +=  ctx_.axeSections.size() * sizeof(AXE_SECTION);
+	cursor_ += ctx_.axeSections.size() * sizeof(AXE_SECTION);
 	updateSectionsData();
 
 	updateRelocations();
@@ -397,6 +351,8 @@ void AdrenochromeBuilder::updateRelocations()
 }
 
 //BOOL AdrenochromeBuilder::keepSection(ULONG_PTR addr)
+// TODO: DELETE
+/*
 std::string AdrenochromeBuilder::keepSection(ULONG_PTR addr)
 {	
 
@@ -433,6 +389,35 @@ std::string AdrenochromeBuilder::keepSection(ULONG_PTR addr)
 
 	return std::string();
 	//return FALSE;
+}*/
+
+// NOTE: fixed version? 
+std::string AdrenochromeBuilder::keepSection(DWORD dwRva)
+{	
+	PIMAGE_NT_HEADERS pNtHeaders = (PIMAGE_NT_HEADERS)(rawImageBase_ + ((PIMAGE_DOS_HEADER)rawImageBase_)->e_lfanew);
+	WORD nSections = pNtHeaders->FileHeader.NumberOfSections;
+	PIMAGE_SECTION_HEADER pSectionHeader = IMAGE_FIRST_SECTION(pNtHeaders);
+
+	for (WORD i = 0; i < nSections; ++i, ++pSectionHeader)
+	{
+		// Compare RVA to VirtualAddress... TODO: make this a function instead? 
+		if (dwRva >= pSectionHeader->VirtualAddress &&
+			dwRva < pSectionHeader->VirtualAddress + pSectionHeader->Misc.VirtualSize)
+		{
+			std::string sectionName(reinterpret_cast<const char*>(pSectionHeader->Name),
+				strnlen(reinterpret_cast<const char*>(pSectionHeader->Name), 8));
+
+			std::vector<AXE_SECTION>::iterator iter = std::find_if(ctx_.axeSections.begin(), ctx_.axeSections.end(),
+				[&sectionName](const AXE_SECTION& s) { return std::string(s.Name) == sectionName; });
+
+			if (iter != ctx_.axeSections.end())
+			{
+				return sectionName;
+			}
+		}
+	}
+
+	return std::string();
 }
 
 DWORD AdrenochromeBuilder::Rva2Offset(DWORD dwRva)
@@ -474,6 +459,8 @@ PIMAGE_SECTION_HEADER AdrenochromeBuilder::getPESection(DWORD dwRva)
 		if (dwRva >= pSectionHeader->VirtualAddress && 
 			dwRva < pSectionHeader->VirtualAddress + pSectionHeader->Misc.VirtualSize)
 		{
+			return pSectionHeader;
+			/*
 			std::string sectionName(reinterpret_cast<const char*>(pSectionHeader->Name), strnlen(reinterpret_cast<const char*>(pSectionHeader->Name), 8)); // TODO: don't hard code length? 
 			//std::string sectionName = reinterpret_cast<char*>(pSectionHeader->Name);
 			// TODO: make this into its own function?
@@ -484,6 +471,7 @@ PIMAGE_SECTION_HEADER AdrenochromeBuilder::getPESection(DWORD dwRva)
 			{
 				return pSectionHeader;
 			}
+			*/
 		}
 	}
 	return nullptr;
@@ -492,6 +480,21 @@ PIMAGE_SECTION_HEADER AdrenochromeBuilder::getPESection(DWORD dwRva)
 //PAXE_SECTION AdrenochromeBuilder::getAXESection(DWORD dwRva)
 PAXE_SECTION AdrenochromeBuilder::getAXESection(PIMAGE_SECTION_HEADER pSectionHeader)
 {
+	std::string sectionName(reinterpret_cast<const char*>(pSectionHeader->Name),
+		strnlen(reinterpret_cast<const char*>(pSectionHeader->Name), 8));
+
+	std::vector<AXE_SECTION>::iterator iter = std::find_if(ctx_.axeSections.begin(), ctx_.axeSections.end(),
+		[&sectionName](const AXE_SECTION& s) { return std::string(s.Name) == sectionName; });
+
+	if (iter != ctx_.axeSections.end())
+	{
+		return &(*iter);
+	}
+
+	return nullptr;  // ✅ Return nullptr instead
+
+	////////////////////////////////////////////////
+	/*
 	std::string sectionName = reinterpret_cast<char*>(pSectionHeader->Name);
 
 	std::vector<AXE_SECTION>::iterator iter = std::find_if(ctx_.axeSections.begin(), ctx_.axeSections.end(),
@@ -505,6 +508,7 @@ PAXE_SECTION AdrenochromeBuilder::getAXESection(PIMAGE_SECTION_HEADER pSectionHe
 	// TODO: should never get here? this is just for compiler warnings?
 	AXE_SECTION nullAxeSection{};
 	return &nullAxeSection; // TODO: should just return nullptr instead?
+	*/
 }
 
 // TODO: not implemented
@@ -517,6 +521,83 @@ BOOL AdrenochromeBuilder::SectionNamesEqual(const IMAGE_SECTION_HEADER &peSectio
 
 void AdrenochromeBuilder::calculateEntryPoint()
 {
+
+	DWORD axeEntryRVA = findFunctionAddress();  // Find "AxeEntry" export
+
+	if (axeEntryRVA == 0)
+	{
+		std::cerr << "ERROR: AxeEntry function not found in exports!" << std::endl;
+		std::cerr << "Make sure your engine.dll exports AxeEntry" << std::endl;
+
+		// Fallback to DllMain
+		std::cerr << "Falling back to DllMain entry point" << std::endl;
+		PIMAGE_NT_HEADERS pNtHeaders = (PIMAGE_NT_HEADERS)(rawImageBase_ + ((PIMAGE_DOS_HEADER)rawImageBase_)->e_lfanew);
+		axeEntryRVA = pNtHeaders->OptionalHeader.AddressOfEntryPoint;
+	}
+	else
+	{
+		std::cout << "✓ Found AxeEntry at RVA: 0x" << std::hex << axeEntryRVA << std::dec << std::endl;
+	}
+
+	// Find which PE section contains this RVA
+	PIMAGE_SECTION_HEADER matching_section = getPESection(axeEntryRVA);
+
+	if (!matching_section)
+	{
+		std::cerr << "ERROR: Could not find PE section for entry RVA 0x"
+			<< std::hex << axeEntryRVA << std::dec << std::endl;
+
+		// Debug: Print all sections
+		PIMAGE_NT_HEADERS pNtHeaders = (PIMAGE_NT_HEADERS)(rawImageBase_ + ((PIMAGE_DOS_HEADER)rawImageBase_)->e_lfanew);
+		PIMAGE_SECTION_HEADER pSectionHeader = IMAGE_FIRST_SECTION(pNtHeaders);
+		std::cerr << "Available PE sections:" << std::endl;
+		for (WORD i = 0; i < pNtHeaders->FileHeader.NumberOfSections; ++i, ++pSectionHeader)
+		{
+			std::cerr << "  " << std::string((char*)pSectionHeader->Name, strnlen((char*)pSectionHeader->Name, 8))
+				<< " VA: 0x" << std::hex << pSectionHeader->VirtualAddress
+				<< " - 0x" << (pSectionHeader->VirtualAddress + pSectionHeader->Misc.VirtualSize)
+				<< std::dec << std::endl;
+		}
+		return;
+	}
+
+	std::string sectionName(reinterpret_cast<const char*>(matching_section->Name),
+		strnlen(reinterpret_cast<const char*>(matching_section->Name), 8));
+	std::cout << "✓ Entry point is in section: " << sectionName << std::endl;
+
+	// Find corresponding AXE section
+	PAXE_SECTION axeEpSection = getAXESection(matching_section);
+
+	if (!axeEpSection)
+	{
+		std::cerr << "ERROR: Section '" << sectionName << "' is not in the AXE file!" << std::endl;
+		std::cerr << "Add it to buildConfig.sectionNames in initializeContext()" << std::endl;
+
+		// Debug: Print kept sections
+		std::cerr << "Sections in AXE:" << std::endl;
+		for (const auto& sec : ctx_.axeSections)
+		{
+			std::cerr << "  " << std::string(sec.Name, strnlen(sec.Name, 8)) << std::endl;
+		}
+		return;
+	}
+
+	// Calculate offset within the section
+	DWORD rva = axeEntryRVA - matching_section->VirtualAddress;
+
+	// Entry point = file offset in AXE
+	ULONG_PTR entryPoint = axeEpSection->Offset + rva;
+	ctx_.axeHeader.AddressOfEntryPoint = (DWORD)entryPoint;
+
+	std::cout << "✓ Entry point set to file offset: 0x" << std::hex << entryPoint << std::dec << std::endl;
+
+
+	///////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
 	/*
 	 * DWORD AddressOfEntryPoint = pNtHeaders->OptionalHeader.AddressOfEntryPoint;
 	 * epSection = find_section_ep_is_in(AddressOfEntryPoint);
@@ -528,6 +609,7 @@ void AdrenochromeBuilder::calculateEntryPoint()
 
 
 	// TODO: instead the address of entry point should be where the function "AxeEntry" lives
+	/*
 	DWORD axeEntryRVA = findFunctionAddress(); // should be relative to the image base
 
 	PIMAGE_NT_HEADERS pNtHeaders = (PIMAGE_NT_HEADERS)(rawImageBase_ + ((PIMAGE_DOS_HEADER)rawImageBase_)->e_lfanew);
@@ -541,7 +623,7 @@ void AdrenochromeBuilder::calculateEntryPoint()
 	ULONG_PTR entryPoint = axeEpSection->Offset + rva;
 	ctx_.axeHeader.AddressOfEntryPoint = (DWORD)entryPoint;
 	////////////////////////////////////////////////////////////////////////
-
+	*/
 
 }
 
@@ -560,19 +642,23 @@ DWORD AdrenochromeBuilder::findFunctionAddress(void)
 	///
 	PIMAGE_NT_HEADERS pNTHeader = (PIMAGE_NT_HEADERS)((ULONG_PTR)rawImageBase_ + ((PIMAGE_DOS_HEADER)rawImageBase_)->e_lfanew);
 
-	// uiNameArray = the address of the modules export directory entry
-	UINT_PTR uiNameArray = (UINT_PTR)&((PIMAGE_NT_HEADERS)pNTHeader)->OptionalHeader.DataDirectory[ IMAGE_DIRECTORY_ENTRY_EXPORT  ];
-
 	// NOTE: this is the rva for the Export Directory (PIMAGE_EXPORT_DIRECTORY)
 	DWORD dwExportDirRVA = pNTHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress;
 
+	// uiNameArray = the address of the modules export directory entry
+	UINT_PTR uiNameArray = (UINT_PTR)&((PIMAGE_NT_HEADERS)pNTHeader)->OptionalHeader.DataDirectory[ IMAGE_DIRECTORY_ENTRY_EXPORT  ];
+
+
 	// get the File Offset of the export directory
 	PIMAGE_EXPORT_DIRECTORY pExportDir = (PIMAGE_EXPORT_DIRECTORY)(rawImageBase_ + Rva2Offset(dwExportDirRVA));
+
+
 	
 	// TODO: 
-	DWORD* arrayOfNamesRVAs = (DWORD*)(rawImageBase_ + Rva2Offset(((PIMAGE_EXPORT_DIRECTORY)pExportDir)->AddressOfNames));
-	DWORD* arrayOfFunctionRVAs = (DWORD*)(rawImageBase_ + Rva2Offset(((PIMAGE_EXPORT_DIRECTORY)pExportDir)->AddressOfFunctions));
-	WORD* arrayOfNameOrdinals = (WORD*)(rawImageBase_ + Rva2Offset(((PIMAGE_EXPORT_DIRECTORY)pExportDir)->AddressOfNameOrdinals));
+	DWORD* arrayOfNamesRVAs = (DWORD*)(rawImageBase_ + Rva2Offset(pExportDir->AddressOfNames));
+	DWORD* arrayOfFunctionRVAs = (DWORD*)(rawImageBase_ + Rva2Offset(pExportDir->AddressOfFunctions));
+	WORD* arrayOfNameOrdinals = (WORD*)(rawImageBase_ + Rva2Offset(pExportDir->AddressOfNameOrdinals));
+
 
 	DWORD numNames = pExportDir->NumberOfNames;
 
@@ -582,6 +668,18 @@ DWORD AdrenochromeBuilder::findFunctionAddress(void)
 	//DWORD targetFunctionAddress;  // TODO: should be 0
 	//DWORD targetFunctionAddressOffset; // TODO: should be 0 
 
+	for (DWORD i = 0; i < numNames; ++i)
+	{
+		// ✅ Use Rva2Offset to ACCESS the name string in the file
+		char* prodName = (char*)((ULONG_PTR)rawImageBase_ + Rva2Offset(arrayOfNamesRVAs[i]));
+
+		if (strstr(prodName, "AxeEntry") != NULL)
+		{
+			return arrayOfFunctionRVAs[arrayOfNameOrdinals[i]];
+		}
+	}
+
+	/*
 	for (DWORD i = 0; i < numNames; ++i)
 	{
 		//char * cpExportedFunctionName = (char *)(dllBaseAddress + Rva2Offset( DEREF_32( uiNameArray  ), dllBaseAddress  ));
@@ -596,7 +694,7 @@ DWORD AdrenochromeBuilder::findFunctionAddress(void)
 			//return targetFunctionAddressOffset;
 			return Rva2Offset(arrayOfFunctionRVAs[arrayOfNameOrdinals[i]]);
 		}
-	}
+	}*/
 	return 0;
 }
 

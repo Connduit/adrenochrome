@@ -72,7 +72,8 @@ private:
 	// 
 	//BOOL keepSection(ULONG_PTR addr);
 	// return the name of section that corresponds with the addr
-	std::string keepSection(ULONG_PTR addr);
+	//std::string keepSection(ULONG_PTR addr); // TODO: delete? 
+	std::string keepSection(DWORD dwRva);
 
 	//
 	DWORD Rva2Offset(DWORD dwRva);
@@ -101,6 +102,9 @@ private:
 	// we must treat it as the same layout as when the pe is on 
 	// the disk (and not virtualalloc'd in memory)
 	ULONG_PTR rawImageBase_; 
+	// TODO: add pNTHeader var
+	// PIMAGE_NT_HEADERS pNTHeader
+	
 	//ULONG_PTR baseAddress_;  // TODO: ? 
 	//ULONG_PTR currentAddress_; // NOTE: the current address ("location") we're writing to (within the baseaddress)
 	AXE_BUILDER_CONTEXT ctx_;

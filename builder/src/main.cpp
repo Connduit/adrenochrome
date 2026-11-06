@@ -18,9 +18,9 @@ int main(int argc, char* argv[])
 		//const wchar_t *path = ws.c_str();
 		//builder.loadFile(path);
 
-		builder.basicBuild(s);
-		//builder.loadFile(s);
-		//builder.build();
+		//builder.basicBuild(s);
+		builder.loadFile(s);
+		builder.build();
 
 		//AdrenochromeBuilder::loadFile(argv[1]);
 	}

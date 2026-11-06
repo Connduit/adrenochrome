@@ -9,7 +9,7 @@
 #pragma pack(push, 1)
 typedef struct _AXE_HEADER {
     // TODO: add default constructor for this? 
-    WORD Magic;             // e.g., 0x58454121 = "AXE!" (NOT MZ) // TODO: rename to e_magic
+    DWORD Magic;             // e.g., 0x58454121 = "AXE!" (NOT MZ) // TODO: rename to e_magic
     //WORD Version;           // Format version
     // WORD  ModuleType;        // Engine = 0, Module = 1, etc.
 
@@ -27,6 +27,9 @@ typedef struct _AXE_HEADER {
 
     // DWORD Flags;             // encryption flags, compression, etc.
     // DWORD Reserved;          // padding / future use 
+
+    ULONG_PTR PreferredImageBase;  // TODO: rename? 
+
 } AXE_HEADER, *PAXE_HEADER;
 
 typedef struct _AXE_SECTION {

@@ -1,4 +1,4 @@
-#include "Loader.h"
+﻿#include "Loader.h"
 #include "AxeLoaderContext.h"
 #include "ManualMap.h"
 
@@ -80,6 +80,67 @@ int loadAxeFromDisk()
 
 }
 
+// In Loader.c - loadAxe() function
+/*
+void loadAxe(LPVOID lpBuffer, DWORD dwLength)
+{
+	MessageBoxA(NULL, "inside loadAxe", "Debug", MB_OK);
+
+	// Verify it's a valid AXE
+	PAXE_HEADER pAxeHeader = (PAXE_HEADER)lpBuffer;
+	if (pAxeHeader->Magic != 0xBEEF)
+	{
+		MessageBoxA(NULL, "Invalid AXE magic!", "Error", MB_OK);
+		return;
+	}
+
+	// Allocate memory for the AXE image
+	ULONG_PTR baseAddress = (ULONG_PTR)VirtualAlloc(NULL, pAxeHeader->SizeOfImage,
+		MEM_RESERVE | MEM_COMMIT,
+		PAGE_EXECUTE_READWRITE);
+	if (!baseAddress)
+	{
+		MessageBoxA(NULL, "VirtualAlloc failed", "Error", MB_OK);
+		return;
+	}
+
+	// Copy sections into memory
+	PAXE_SECTION pSection = (PAXE_SECTION)((ULONG_PTR)lpBuffer + sizeof(AXE_HEADER));
+	for (DWORD i = 0; i < pAxeHeader->NumberOfSections; ++i, ++pSection)
+	{
+		// Skip .reloc section (it's not loaded into memory)
+		if (strcmp(pSection->Name, ".reloc") == 0)
+			continue;
+
+		PBYTE srcPtr = (PBYTE)lpBuffer + pSection->Offset;
+		PBYTE dstPtr = (PBYTE)(baseAddress + pSection->memoryAddress);
+		memcpy(dstPtr, srcPtr, pSection->Size);
+	}
+
+	// Apply relocations
+	ULONG_PTR relocationDelta = baseAddress - pAxeHeader->PreferredImageBase;
+	PAXE_RELOCATION pReloc = /// * find relocations in buffer * /;
+	for (DWORD i = 0; i < pAxeHeader->NumberOfRelocations; ++i, ++pReloc)
+	{
+		PAXE_SECTION targetSection = &((PAXE_SECTION)((ULONG_PTR)lpBuffer + sizeof(AXE_HEADER)))[pReloc->sectionIndex];
+		ULONG_PTR patchAddress = baseAddress + targetSection->memoryAddress + pReloc->offset;
+
+		if (pReloc->type == IMAGE_REL_BASED_DIR64)
+		{
+			*(ULONG_PTR*)patchAddress += relocationDelta;
+		}
+		// ... handle other relocation types
+	}
+
+	// Call entry point (AxeEntry)
+	ULONG_PTR entryAddress = baseAddress + pAxeHeader->AddressOfEntryPoint;
+
+	typedef void (*AxeEntryFn)(void);
+	MessageBoxA(NULL, "Calling AxeEntry...", "Debug", MB_OK);
+	((AxeEntryFn)entryAddress)();  // ✅ This will show "Engine AXE loaded"
+	MessageBoxA(NULL, "Returned from AxeEntry", "Debug", MB_OK);
+}*/
+
 // NOTE: lpBuffer should be the rawImageBase of the .axe file on disk
 void loadAxe(LPVOID lpBuffer, DWORD dwLength) // TODO: dwLength not needed?
 {
@@ -99,6 +160,9 @@ void loadAxe(LPVOID lpBuffer, DWORD dwLength) // TODO: dwLength not needed?
 	}
 
 	// NOTE: treating AXE as DLL
+	MessageBoxA(NULL, "after manualmap call", "Debug", MB_OK);
+
+
 
 
 
