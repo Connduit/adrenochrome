@@ -1,4 +1,5 @@
 """Run with: python3 builder/tests/test_archive.py /absolute/path/to/builder"""
+import os
 import pathlib
 import struct
 import subprocess
@@ -121,6 +122,27 @@ class ArchiveTests(unittest.TestCase):
         self.run_cli('pack', self.source, self.archive, ok=False)
         self.assertEqual(self.source.read_bytes(), fixture())
         self.assertTrue(self.archive.is_symlink())
+
+    @unittest.skipUnless(os.environ.get('AXE_EXTRACTOR'), 'Set AXE_EXTRACTOR to test standalone utility')
+    def test_standalone_extractor(self):
+        extractor = os.environ['AXE_EXTRACTOR']
+        self.pack()
+        output = self.root / 'standalone.dll'
+        result = subprocess.run([extractor, str(self.archive), str(output)],
+                                capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(output.read_bytes(), fixture())
+        for args, expected in [([], 2), (['-h'], 0), (['--help'], 0),
+                               ([str(self.archive), str(output)], 1)]:
+            result = subprocess.run([extractor, *args], capture_output=True, text=True)
+            self.assertEqual(result.returncode, expected, result.stderr)
+        self.assertEqual(output.read_bytes(), fixture())
+        self.archive.write_bytes(b'invalid archive')
+        rejected = self.root / 'rejected.dll'
+        result = subprocess.run([extractor, str(self.archive), str(rejected)],
+                                capture_output=True, text=True)
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertFalse(rejected.exists())
 
     def test_help(self):
         for option in ('-h', '--help'):

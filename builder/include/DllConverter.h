@@ -6,8 +6,7 @@
 
 class DllConverter
 {
-public:
-
+  public:
     enum class Target : uint8_t
     {
         AXE,
@@ -16,10 +15,9 @@ public:
 
     DllConverter();
     ~DllConverter();
-    void convert(std::string& dllPath, Target outputType = Target::AXE);
-private:
+    void convert(std::string &dllPath, Target outputType = Target::AXE);
+
+  private:
 };
 
-
-
-#endif 
+#endif

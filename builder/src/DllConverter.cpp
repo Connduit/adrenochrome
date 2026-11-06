@@ -1,14 +1,10 @@
 #include "DllConverter.h"
 
-DllConverter::DllConverter(/* args */)
-{
-}
+DllConverter::DllConverter(/* args */) {}
 
-DllConverter::~DllConverter()
-{
-}
+DllConverter::~DllConverter() {}
 
-void DllConverter::convert(std::string& dllPath, Target outputType)
+void DllConverter::convert(std::string &dllPath, Target outputType)
 {
     switch (outputType)
     {
@@ -19,7 +15,7 @@ void DllConverter::convert(std::string& dllPath, Target outputType)
     case Target::PIC:
         /* code */
         break;
-    
+
     default:
         break;
     }

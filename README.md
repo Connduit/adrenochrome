@@ -8,7 +8,16 @@ The implementation is a work in progress. Several features described in the arch
 
 The builder now writes a **non-executing AXE analysis archive**. It preserves the complete input DLL and provides `pack`, `inspect`, and `extract` commands. This is deliberately a separate format from the unfinished runtime AXE structures: **do not pass these archives to the existing loader**. No loader or mapping code was changed.
 
-See [the analysis archive specification and tests](builder/ANALYSIS_ARCHIVE.md).
+A separate analysis build provides a reusable archive library and a standalone
+extractor, without linking the runtime loader:
+
+```sh
+make -C builder -j4
+builder/build/axe_extract input.axe restored.dll
+make -C builder test
+```
+
+See [the analysis archive specification, library API, and tests](builder/ANALYSIS_ARCHIVE.md).
 
 ## What is implemented
 

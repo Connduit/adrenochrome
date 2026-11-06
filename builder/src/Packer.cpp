@@ -1,13 +1,8 @@
 #include "Packer.h"
 
-Packer::Packer()
-{
-}
+Packer::Packer() {}
 
-Packer::~Packer()
-{
-}
-
+Packer::~Packer() {}
 
 // pack dll, axe, or pic into dll/pe_file
 // TODO: function

@@ -58,9 +58,58 @@ output files are removed after detected write failures. Output directories must
 not be concurrently modified: the portable existence check and output creation
 are separate operations and do not provide an atomic no-clobber guarantee.
 
+## Standalone utility and library
+
+The standalone analysis build produces three artifacts:
+
+- `builder/build/builder`: packs, inspects, and extracts analysis archives.
+- `builder/build/axe_extract`: validates an archive and extracts the original DLL to a new file.
+- `builder/build/libaxe_archive.a`: reusable C++17 analysis archive library.
+
+From the repository root:
+
+```sh
+make -C builder -j4
+builder/build/axe_extract -h
+builder/build/axe_extract input.axe restored.dll
+make -C builder test
+```
+
+The utility only writes bytes to disk. It never invokes the runtime loader or
+executes the extracted file. The build links only the analysis archive source;
+it does not link the legacy conversion code, manual mapper, or injection helpers.
+
+To use the library from another analysis tool, include `AxeArchive.h` and link
+`libaxe_archive.a` with a compatible C++17 compiler. Its file-based API is:
+
+```cpp
+axe_archive::write(inputPath, archivePath);
+axe_archive::inspect(archivePath, reportStream);
+axe_archive::extract(archivePath, outputPath);
+```
+
+All paths are `std::filesystem::path`; the report destination is `std::ostream&`.
+Functions throw standard exceptions on file or validation errors. Extraction
+validates the archive before creating its output, and refuses existing output
+paths. No runtime loading API is exposed.
+
+For Windows cross-compilation with MinGW, use a separate output directory:
+
+```sh
+make -C builder -j4 BUILD_DIR=build/windows EXEEXT=.exe \
+  CXX=x86_64-w64-mingw32-g++ AR=x86_64-w64-mingw32-ar
+```
+
+The prepared cloud toolchain uses `x86_64-w64-mingw32-g++-posix` after adding its
+`usr/bin` directory to PATH. Run native tests on the host build; cross-compiled
+Windows executables require Windows and the appropriate MinGW runtime DLLs.
+The existing Visual Studio project builds the builder CLI; the new standalone
+extractor is built through `builder/Makefile`.
+
 ## Build and test on Linux
 
-Run from the repository root:
+The standalone build above requires GNU Make, a C++17 compiler, `ar`, and Python 3
+for tests. Alternatively, compile the builder directly:
 
 ```sh
 g++ -std=c++17 -Wall -Wextra -Werror -Ibuilder/include \
@@ -68,8 +117,23 @@ g++ -std=c++17 -Wall -Wextra -Werror -Ibuilder/include \
 python3 builder/tests/test_archive.py /tmp/axe-analysis-builder
 ```
 
-Tests use a synthetic PE fixture containing data only. They exercise archive
+The direct test command skips the standalone utility test unless `AXE_EXTRACTOR`
+points to a built extractor. `make -C builder test` supplies that path and runs
+all tests.
+
+Tests use synthetic PE fixtures containing data only. They exercise archive
 encoding, byte-for-byte extraction, section inspection, malformed input, checksum
-and header rejection, output preservation, and nonzero failure statuses. They do
-not execute DLLs. The Visual Studio builder project and root Makefile also include
-the new CLI implementation; old conversion sources remain unused by this CLI.
+and header rejection, output preservation, nonzero failure statuses, and the
+standalone extraction utility. They do not execute DLLs.
+
+## Formatting
+
+`builder/.clang-format` defines four-space indentation, Allman braces, and a
+100-column line limit. To apply it with clang-format 21:
+
+```sh
+clang-format -i builder/src/*.cpp builder/include/*.h builder/tools/*.cpp
+```
+
+Legacy conversion files are formatted for readability only; their behavior and
+unfinished implementation are unchanged.

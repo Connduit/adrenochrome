@@ -3,13 +3,12 @@
 
 class Packer
 {
-public:
+  public:
     Packer();
     ~Packer();
-private:
+
+  private:
     /* data */
 };
-
-
 
 #endif
